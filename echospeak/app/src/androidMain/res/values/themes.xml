@@ -1,0 +1,15 @@
+<resources>
+
+    <style name="Theme.echospeak.Base" parent="Theme.AppCompat">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:navigationBarColor">@color/status_navigation_bars_compat</item>
+        <item name="android:statusBarColor">@color/status_navigation_bars_compat</item>
+    </style>
+
+    <style name="Theme.echospeak.DayBase" parent="Theme.echospeak.Base">
+        <item name="android:windowBackground">@color/background_day</item>
+    </style>
+
+    <style name="Theme.echospeak" parent="Theme.echospeak.DayBase" />
+</resources>

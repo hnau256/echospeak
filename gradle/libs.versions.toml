@@ -1,0 +1,81 @@
+[versions]
+#tools
+kotlin = "2.2.20"
+#kotest = "5.8.0"
+java = "VERSION_17"
+androidGradlePlugin = "8.13.0"
+androidCompileSdk = "36"
+androidMinSdk = "21"
+androidBuildTools = "35.0.0"
+composeDesktop = "1.8.2"
+googleServices = "4.4.3"
+#libs
+arrow = "2.1.2"
+kotlinSerialization = "1.9.0"
+kotlinCoroutines = "1.10.2"
+pipe = "1.1.1"
+enumvalues = "1.0.0"
+app = "1.10.0"
+compose-activity = "1.11.0"
+kotlin-date-time = "0.7.1"
+material3 = "1.3.1"
+ooxml = "5.4.1"
+ktor = "3.3.0"
+
+[plugins]
+android-app = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+android-lib = { id = "com.android.library", version.ref = "androidGradlePlugin" }
+ksp = { id = "com.google.devtools.ksp", version = "2.2.20-2.0.3" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+compose-desktop = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeDesktop" }
+googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+
+[libraries]
+#plugins as libraries
+gradle-plugin-kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+gradle-plugin-android = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
+gradle-plugin-compose = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "composeDesktop" }
+# kotlin
+kotlin-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinSerialization" }
+kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerialization" }
+kotlin-serialization-cbor = { module = "org.jetbrains.kotlinx:kotlinx-serialization-cbor", version.ref = "kotlinSerialization" }
+kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
+kotlin-io = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version = "0.8.0" }
+#kotest-framework-multiplatform-plugin = { module = "io.kotest:kotest-framework-multiplatform-plugin-gradle", version.ref = "kotest" }
+#kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+#kotest-junit-runner = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
+#kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
+kotlin-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlin-date-time" }
+kotlin-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version = "0.4.0" }
+#android
+android-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "compose-activity" }
+android-datastore = { module = "androidx.datastore:datastore", version = "1.1.7" }
+android-appcompat = { module = "androidx.appcompat:appcompat", version = "1.7.1" }
+#compose
+compose-resources = { module = "org.jetbrains.compose.resources:resources", version.ref = "composeDesktop" }
+#arrow
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+arrow-serialization = { module = "io.arrow-kt:arrow-core-serialization", version.ref = "arrow" }
+#logging
+slf4j-kotlin = { module = "io.github.oshai:kotlin-logging-jvm", version = "7.0.7" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version = "2.0.17" }
+#pipe
+pipe-annotations = { module = "com.github.hnau256.common-gen-pipe:annotations", version.ref = "pipe" }
+pipe-processor = { module = "com.github.hnau256.common-gen-pipe:processor", version.ref = "pipe" }
+#enumvalues
+enumvalues-annotations = { module = "com.github.hnau256.common-gen-enumvalues:annotations", version.ref = "enumvalues" }
+enumvalues-processor = { module = "com.github.hnau256.common-gen-enumvalues:processor", version.ref = "enumvalues" }
+#hnau
+hnau-kotlin = { module = "com.github.hnau256.common-kotlin:common-kotlin", version = "1.3.0" }
+hnau-gen-kt = { module = "com.github.hnau256:common-gen-kt", version = "1.1.0" }
+hnau-dynamiccolor = { module = "com.github.hnau256:common-dynamiccolor", version = "1.1.1" }
+hnau-model = { module = "com.github.hnau256.common-app:model", version.ref = "app" }
+hnau-projector = { module = "com.github.hnau256.common-app:projector", version.ref = "app" }
+#other
+ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "ooxml" }
+ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
+

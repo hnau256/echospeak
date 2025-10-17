@@ -1,0 +1,8 @@
+<resources>
+
+    <style name="Theme.echospeak.NightBase" parent="Theme.echospeak.Base">
+        <item name="android:windowBackground">@color/background_night</item>
+    </style>
+
+    <style name="Theme.echospeak" parent="Theme.echospeak.NightBase" />
+</resources>
