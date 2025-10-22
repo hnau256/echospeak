@@ -1,10 +1,12 @@
-package hnau.echospeak.app
+package hnau.echospeak.app.db
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactors
+import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactorsDao
 
 @Database(
     entities = [

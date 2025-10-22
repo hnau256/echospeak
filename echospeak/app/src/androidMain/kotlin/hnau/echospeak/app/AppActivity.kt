@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import hnau.common.app.model.app.AppViewModel
+import hnau.echospeak.app.knowfactors.VariantsKnowFactorsRepositoryFactoryRoomImpl
 import hnau.echospeak.model.RootModel
 import hnau.echospeak.model.impl
 import kotlinx.coroutines.flow.StateFlow

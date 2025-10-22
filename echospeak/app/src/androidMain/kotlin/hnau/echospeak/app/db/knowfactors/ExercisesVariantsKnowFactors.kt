@@ -1,4 +1,4 @@
-package hnau.echospeak.app
+package hnau.echospeak.app.db.knowfactors
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

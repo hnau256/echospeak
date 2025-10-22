@@ -1,5 +1,7 @@
-package hnau.echospeak.app
+package hnau.echospeak.app.knowfactors
 
+import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactors
+import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactorsDao
 import hnau.echospeak.engine.KnowFactor
 import hnau.echospeak.engine.VariantId
 import hnau.echospeak.engine.VariantLastAnswerInfo

@@ -1,7 +1,7 @@
-package hnau.echospeak.app
+package hnau.echospeak.app.db
 
 import androidx.room.TypeConverter
-import hnau.echospeak.engine.RememberFactor
+import hnau.echospeak.engine.KnowFactor
 import hnau.echospeak.engine.VariantId
 import hnau.echospeak.model.utils.ExerciseId
 import kotlin.time.Instant
@@ -33,14 +33,14 @@ class EchoSpeakDatabaseTypeConverters {
     )
 
     @TypeConverter
-    fun serializeRememberFactor(
-        from: RememberFactor,
+    fun serializeKnowFactor(
+        from: KnowFactor,
     ): Float = from.factor
 
     @TypeConverter
-    fun deserializeRememberFactor(
+    fun deserializeKnowFactor(
         from: Float,
-    ): RememberFactor = RememberFactor(
+    ): KnowFactor = KnowFactor(
         factor = from,
     )
 
@@ -52,7 +52,7 @@ class EchoSpeakDatabaseTypeConverters {
     @TypeConverter
     fun deserializeInstant(
         from: Long,
-    ): Instant = Instant.fromEpochSeconds(
+    ): Instant = Instant.Companion.fromEpochSeconds(
         epochSeconds = from,
     )
 }
