@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Properties
 
 plugins {
@@ -70,6 +71,7 @@ kotlin {
             dependencies {
                 implementation(libs.hnau.projector)
                 implementation(libs.hnau.model)
+                implementation(project(":echospeak:engine"))
                 implementation(project(":echospeak:model"))
                 implementation(project(":echospeak:projector"))
                 implementation(compose.components.resources)
@@ -82,9 +84,33 @@ kotlin {
             dependencies {
                 implementation(libs.android.activity.compose)
                 implementation(libs.android.appcompat)
+                implementation(libs.room.runtime)
+                implementation(libs.room.ktx)
             }
         }
+    }
+}
 
+dependencies {
+    kspAndroid(libs.room.processor)
+}
+
+afterEvaluate {
+    tasks.named("kspDebugKotlinAndroid").configure {
+        dependsOn(tasks.named("generateResourceAccessorsForAndroidDebug"))
+        dependsOn(tasks.named("generateResourceAccessorsForCommonMain"))
+        dependsOn(tasks.named("generateExpectResourceCollectorsForCommonMain"))
+        dependsOn(tasks.named("generateActualResourceCollectorsForAndroidMain"))
+        dependsOn(tasks.named("generateComposeResClass"))
+    }
+    tasks.withType<KotlinCompile>().configureEach {
+        compilerOptions {
+            freeCompilerArgs.addAll(
+                listOf(
+                    "-opt-in=kotlin.time.ExperimentalTime"
+                )
+            )
+        }
     }
 }
 

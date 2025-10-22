@@ -10,6 +10,7 @@ import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import hnau.common.app.model.app.AppViewModel
 import hnau.echospeak.model.RootModel
+import hnau.echospeak.model.impl
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -18,9 +19,16 @@ import kotlinx.coroutines.launch
 class AppActivity : ComponentActivity() {
 
     private val viewModel: AppViewModel<RootModel, RootModel.Skeleton> by viewModels {
-        AppViewModel.Companion.factory(
-            context = applicationContext,
-            seed = createEchoSpeakAppSeed(),
+        val context = applicationContext
+        AppViewModel.factory(
+            context = context,
+            seed = createEchoSpeakAppSeed(
+                rootModelDependencies = RootModel.Dependencies.impl(
+                    variantsKnowFactorsRepositoryFactory = VariantsKnowFactorsRepositoryFactoryRoomImpl(
+                        context = context,
+                    )
+                )
+            ),
         )
     }
 

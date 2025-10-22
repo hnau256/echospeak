@@ -4,10 +4,10 @@ import hnau.common.app.model.app.AppSeed
 import hnau.common.app.model.theme.Hue
 import hnau.common.app.model.theme.ThemeBrightness
 import hnau.echospeak.model.RootModel
-import hnau.echospeak.model.impl
 
 fun createEchoSpeakAppSeed(
     defaultBrightness: ThemeBrightness? = null,
+    rootModelDependencies: RootModel.Dependencies,
 ): AppSeed<RootModel, RootModel.Skeleton> = AppSeed(
     fallbackHue = Hue(240.0),
     defaultBrightness = defaultBrightness,
@@ -16,7 +16,7 @@ fun createEchoSpeakAppSeed(
     createModel = { scope, appContext, skeleton ->
         RootModel(
             scope = scope,
-            dependencies = RootModel.Dependencies.impl(),
+            dependencies = rootModelDependencies,
             skeleton = skeleton,
         )
     },

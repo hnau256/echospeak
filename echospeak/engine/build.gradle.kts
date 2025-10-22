@@ -18,13 +18,8 @@ kotlin {
             dependencies {
                 implementation(libs.hnau.model)
                 implementation(libs.kotlin.datetime)
-                implementation(libs.kotlin.io)
-                implementation(libs.ktor.network)
-                implementation(libs.kotlin.serialization.json)
-                implementation(libs.kotlin.serialization.cbor)
                 implementation(libs.pipe.annotations)
                 implementation(libs.enumvalues.annotations)
-                implementation(project(":echospeak:engine"))
             }
         }
         androidMain
