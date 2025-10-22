@@ -65,6 +65,7 @@ compose.resources {
 }
 
 kotlin {
+    androidTarget()
     sourceSets {
         commonMain {
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
@@ -86,6 +87,7 @@ kotlin {
                 implementation(libs.android.appcompat)
                 implementation(libs.room.runtime)
                 implementation(libs.room.ktx)
+                implementation(libs.kotlin.serialization.json)
             }
         }
     }

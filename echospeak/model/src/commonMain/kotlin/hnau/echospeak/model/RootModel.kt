@@ -1,6 +1,7 @@
 package hnau.echospeak.model
 
 import hnau.common.app.model.goback.GoBackHandler
+import hnau.common.app.model.goback.NeverGoBackHandler
 import hnau.echospeak.model.process.ProcessModel
 import hnau.echospeak.model.utils.ExerciseId
 import hnau.echospeak.model.utils.VariantsKnowFactorsRepository
@@ -42,5 +43,5 @@ class RootModel(
     )
 
     val goBackHandler: GoBackHandler
-        get() = process.goBackHandler
+        get() = NeverGoBackHandler
 }
