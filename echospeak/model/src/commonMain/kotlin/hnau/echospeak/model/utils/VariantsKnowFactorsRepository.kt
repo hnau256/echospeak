@@ -10,7 +10,7 @@ interface VariantsKnowFactorsRepository {
 
     suspend fun updateVariant(
         id: VariantId,
-        knowFactor: KnowFactor,
+        info: VariantLastAnswerInfo,
     )
 
     interface Factory {

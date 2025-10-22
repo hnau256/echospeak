@@ -7,6 +7,7 @@ import hnau.common.kotlin.foldNullable
 import hnau.common.kotlin.ifNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlin.math.exp
 import kotlin.math.pow
 import kotlin.random.Random
@@ -19,6 +20,7 @@ data class ChosenVariant(
     val learnInfo: LearnInfo?,
 ) {
 
+    @Serializable
     data class LearnInfo(
         val info: VariantLastAnswerInfo,
         val rememberFactor: RememberFactor,

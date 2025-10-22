@@ -2,14 +2,12 @@ package hnau.echospeak.app.knowfactors
 
 import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactors
 import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactorsDao
-import hnau.echospeak.engine.KnowFactor
 import hnau.echospeak.engine.VariantId
 import hnau.echospeak.engine.VariantLastAnswerInfo
 import hnau.echospeak.model.utils.ExerciseId
 import hnau.echospeak.model.utils.VariantsKnowFactorsRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -42,13 +40,9 @@ class VariantsKnowFactorsRepositoryRoomImpl(
 
     override suspend fun updateVariant(
         id: VariantId,
-        knowFactor: KnowFactor
+        info: VariantLastAnswerInfo,
     ) {
         accessMutex.withLock {
-            val info = VariantLastAnswerInfo(
-                lastIterationTimestamp = Clock.System.now(),
-                knowFactor = knowFactor,
-            )
             cache?.set(id, info)
             getDao().upsert(
                 ExercisesVariantsKnowFactors(
