@@ -5,15 +5,20 @@
 
 package hnau.echospeak.model.process
 
+import arrow.core.Either
 import arrow.core.NonEmptyList
-import arrow.core.identity
+import arrow.core.left
+import arrow.core.nonEmptyListOf
 import arrow.core.serialization.NonEmptyListSerializer
+import arrow.core.toNonEmptyListOrNull
+import hnau.common.kotlin.Mutable
 import hnau.common.kotlin.coroutines.Scoped
 import hnau.common.kotlin.coroutines.createChild
 import hnau.common.kotlin.coroutines.mapState
 import hnau.common.kotlin.coroutines.runningFoldState
 import hnau.common.kotlin.coroutines.scopedInState
 import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
+import hnau.common.kotlin.foldNullable
 import hnau.common.kotlin.serialization.MutableStateFlowSerializer
 import hnau.echospeak.engine.ChosenVariant
 import hnau.echospeak.model.process.dto.Dialog
@@ -22,13 +27,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import kotlin.math.acos
 
 class VariantModel(
     scope: CoroutineScope,
     private val dependencies: Dependencies,
-    skeleton: Skeleton,
+    private val skeleton: Skeleton,
 ) {
 
     @Pipe
@@ -43,24 +50,8 @@ class VariantModel(
     data class Skeleton(
         val title: String,
         val learnInfo: ChosenVariant.LearnInfo?,
-        val lines: MutableStateFlow<Lines>,
+        val lines: MutableStateFlow<Pair<Lines<CompletedLineModel.Skeleton, ActiveLineModel.Skeleton>, List<String>>>,
     ) {
-
-        @Serializable
-        data class Lines(
-            val completed: List<CompletedLineModel.Skeleton>,
-            val active: ActiveLineModel.Skeleton,
-            val future: List<String>,
-        ) {
-
-            constructor(
-                lines: NonEmptyList<String>,
-            ) : this(
-                completed = emptyList(),
-                active = ActiveLineModel.Skeleton(lines.head),
-                future = lines.tail,
-            )
-        }
 
         constructor(
             dialog: Dialog,
@@ -68,40 +59,70 @@ class VariantModel(
         ) : this(
             title = dialog.title,
             learnInfo = learnInfo,
-            lines = Lines(
-                lines = dialog.lines,
+            lines = Pair(
+                first = Lines.WithActive(
+                    completed = emptyList<CompletedLineModel.Skeleton>(),
+                    active = ActiveLineModel.Skeleton(dialog.lines.head),
+                ),
+                second = dialog.lines.tail,
             ).toMutableStateFlowAsInitial(),
         )
     }
 
-    data class Lines(
-        val completed: List<CompletedLineModel>,
-        val active: ActiveLineModel,
-        val future: List<String>,
-    )
+    @Serializable
+    sealed interface Lines<out C, out A> {
 
-    private data class ScopedLines(
-        val completed: List<Scoped<CompletedLineModel>>,
-        val active: Scoped<ActiveLineModel>,
-        val future: List<String>,
+        @Serializable
+        data class WithActive<out C, out A>(
+            val completed: List<C>,
+            val active: A,
+        ) : Lines<C, A>
+
+        @Serializable
+        data class CompletedOnly<out C>(
+            val completed: NonEmptyList<C>,
+        ) : Lines<C, Nothing>
+    }
+
+    private fun CompletedLineModel.Skeleton.toActive(): ActiveLineModel.Skeleton =
+        ActiveLineModel.Skeleton(
+            text = text,
+        )
+
+    private fun ActiveLineModel.Skeleton.toCompleted(): CompletedLineModel.Skeleton =
+        CompletedLineModel.Skeleton(
+            text = text,
+        )
+
+    private fun activateCompleted(
+        index: Int,
     ) {
-
-        inline fun <R> use(
-            index: Int,
-            isCompleted: (Scoped<CompletedLineModel>) -> R,
-            isActive: (Scoped<ActiveLineModel>) -> R,
-            isFuture: () -> R,
-        ): R = when {
-            index < completed.size -> isCompleted(completed[index])
-            index == completed.size -> isActive(active)
-            else -> isFuture()
+        skeleton.lines.update { (lines, future) ->
+            
         }
     }
 
-    private fun moveActive(
-        updateIndex: (Int) -> Int,
-    ) {
-        TODO()
+    private fun switchToCompletedOnly() {
+        skeleton.lines.update { (lines, future) ->
+            val completedOnlyLines = when (lines) {
+                is Lines.CompletedOnly -> lines
+                is Lines.WithActive -> {
+                    val activeAsCompleted = lines.active.toCompleted()
+                    Lines.CompletedOnly(
+                        completed = lines
+                            .completed
+                            .toNonEmptyListOrNull()
+                            .foldNullable(
+                                ifNull = { nonEmptyListOf(activeAsCompleted) },
+                                ifNotNull = { nonEmptyCompleted ->
+                                    nonEmptyCompleted + activeAsCompleted
+                                }
+                            )
+                    )
+                }
+            }
+            completedOnlyLines to future
+        }
     }
 
     private fun createCompleted(
@@ -116,7 +137,7 @@ class VariantModel(
                 scope = scope,
                 dependencies = dependencies.completed(),
                 skeleton = skeleton,
-                retry = { moveActive { index } },
+                retry = { moveActive(index) },
             ),
         )
     }
@@ -124,6 +145,7 @@ class VariantModel(
     private fun createActive(
         parentScope: CoroutineScope,
         skeleton: ActiveLineModel.Skeleton,
+        index: Int,
     ): Scoped<ActiveLineModel> {
         val scope = parentScope.createChild()
         return Scoped(
@@ -132,90 +154,152 @@ class VariantModel(
                 scope = scope,
                 dependencies = dependencies.active(),
                 skeleton = skeleton,
-                onReady = { moveActive { currentIndex -> currentIndex + 1 } },
+                onReady = { moveActive(index + 1) },
+                cancel = ::switchToCompletedOnly,
             ),
         )
     }
 
-    val lines: StateFlow<Lines> = skeleton
+    val lines: StateFlow<Lines<CompletedLineModel, ActiveLineModel>> = skeleton
         .lines
         .scopedInState(scope)
         .runningFoldState(
             scope = scope,
-            createInitial = { (scope, lines) ->
-                ScopedLines(
-                    completed = lines.completed.mapIndexed { i, skeleton ->
-                        createCompleted(
+            createInitial = { (scope, linesWithFuture) ->
+                val (lines) = linesWithFuture
+                when (lines) {
+                    is Lines.CompletedOnly -> Lines.CompletedOnly(
+                        completed = lines.completed.mapIndexed { i, skeleton ->
+                            createCompleted(
+                                index = i,
+                                parentScope = scope,
+                                skeleton = skeleton,
+                            )
+                        }
+                    )
+
+                    is Lines.WithActive -> Lines.WithActive(
+                        completed = lines.completed.mapIndexed { i, skeleton ->
+                            createCompleted(
+                                index = i,
+                                parentScope = scope,
+                                skeleton = skeleton,
+                            )
+                        },
+                        active = createActive(
+                            parentScope = scope,
+                            skeleton = lines.active,
+                            index = lines.completed.size,
+                        )
+                    )
+                }
+            },
+            operation = { previousLines, (scope, linesWithFuture) ->
+
+                val cache: List<Mutable<Either<Scoped<CompletedLineModel>, Scoped<ActiveLineModel>>?>> =
+                    when (previousLines) {
+                        is Lines.CompletedOnly ->
+                            previousLines
+                                .completed
+                                .map { completed -> completed.left() }
+
+                        is Lines.WithActive ->
+                            buildList<Either<Scoped<CompletedLineModel>, Scoped<ActiveLineModel>>> {
+                                addAll(
+                                    previousLines
+                                        .completed
+                                        .map { completed -> completed.left() }
+                                )
+                                add(
+                                    Either.Right(previousLines.active)
+                                )
+                            }
+                    }
+                        .map(::Mutable)
+
+                val extract: (Int) -> Either<Scoped<CompletedLineModel>, Scoped<ActiveLineModel>>? =
+                    { i ->
+                        cache
+                            .getOrNull(i)
+                            ?.let { mutable ->
+                                val result = mutable.value
+                                mutable.value = null
+                                result
+                            }
+
+                    }
+
+                val extractOrCreateCompleted: (Int, CompletedLineModel.Skeleton) -> Scoped<CompletedLineModel> =
+                    { i, skeleton ->
+                        extract(i)
+                            ?.let { fromCache ->
+                                when (fromCache) {
+                                    is Either.Left -> fromCache.value
+                                    is Either.Right -> {
+                                        fromCache.value.scope.cancel()
+                                        null
+                                    }
+                                }
+                            } ?: createCompleted(
                             index = i,
                             parentScope = scope,
                             skeleton = skeleton,
                         )
-                    },
-                    active = createActive(
-                        parentScope = scope,
-                        skeleton = lines.active,
-                    ),
-                    future = lines.future,
-                )
-            },
-            operation = { previousLines, (scope, lines) ->
-                val result = ScopedLines(
-                    completed = lines.completed.mapIndexed { i, skeleton ->
-                        previousLines.use(
+                    }
+
+                val extractOrCreateActive: (Int, ActiveLineModel.Skeleton) -> Scoped<ActiveLineModel> =
+                    { i, skeleton ->
+                        extract(i)
+                            ?.let { fromCache ->
+                                when (fromCache) {
+                                    is Either.Right -> fromCache.value
+                                    is Either.Left -> {
+                                        fromCache.value.scope.cancel()
+                                        null
+                                    }
+                                }
+                            } ?: createActive(
+                            parentScope = scope,
+                            skeleton = skeleton,
                             index = i,
-                            isCompleted = { completed -> completed },
-                            isActive = { _ ->
-                                createCompleted(
-                                    index = i,
-                                    parentScope = scope,
-                                    skeleton = skeleton,
-                                )
-                            },
-                            isFuture = {
-                                createCompleted(
-                                    index = i,
-                                    parentScope = scope,
-                                    skeleton = skeleton,
-                                )
-                            }
                         )
-                    },
-                    active = previousLines.use(
-                        index = lines.completed.size,
-                        isCompleted = { _ ->
-                            createActive(
-                                parentScope = scope,
-                                skeleton = lines.active,
-                            )
-                        },
-                        isActive = ::identity,
-                        isFuture = {
-                            createActive(
-                                parentScope = scope,
-                                skeleton = lines.active,
-                            )
+                    }
+
+
+                val (lines) = linesWithFuture
+                val result = when (lines) {
+                    is Lines.CompletedOnly -> Lines.CompletedOnly(
+                        completed = lines.completed.mapIndexed { i, skeleton ->
+                            extractOrCreateCompleted(i, skeleton)
                         }
-                    ),
-                    future = lines.future,
-                )
+                    )
 
-                previousLines
-                    .completed
-                    .drop(lines.completed.size)
-                    .forEach { (scope) -> scope.cancel() }
-
-                if (previousLines.completed.size != lines.completed.size) {
-                    previousLines.active.scope.cancel()
+                    is Lines.WithActive -> Lines.WithActive(
+                        completed = lines.completed.mapIndexed { i, skeleton ->
+                            extractOrCreateCompleted(i, skeleton)
+                        },
+                        active = extractOrCreateActive(lines.completed.size, lines.active)
+                    )
                 }
-
+                cache.forEach { item ->
+                    item.value?.fold(
+                        ifLeft = { it.scope.cancel() },
+                        ifRight = { it.scope.cancel() },
+                    )
+                }
                 result
             }
         )
         .mapState(scope) { scopedLines ->
-            Lines(
-                completed = scopedLines.completed.map(Scoped<CompletedLineModel>::value),
-                active = scopedLines.active.value,
-                future = scopedLines.future,
-            )
+            when (scopedLines) {
+                is Lines.CompletedOnly -> Lines.CompletedOnly(
+                    completed = scopedLines.completed.map(Scoped<CompletedLineModel>::value),
+                )
+
+                is Lines.WithActive -> Lines.WithActive(
+                    completed = scopedLines.completed.map(Scoped<CompletedLineModel>::value),
+                    active = scopedLines.active.value,
+                )
+            }
         }
 }

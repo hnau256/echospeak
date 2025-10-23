@@ -9,6 +9,7 @@ class ActiveLineModel(
     dependencies: Dependencies,
     skeleton: Skeleton,
     onReady: () -> Unit,
+    cancel: () -> Unit,
 ) {
 
     @Pipe
