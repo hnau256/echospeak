@@ -18,13 +18,4 @@ data class Dialog(
     val firstLineGender: Gender,
     @SerialName("lines")
     val lines: NonEmptyList<String>,
-) {
-
-    enum class Gender {
-        @SerialName("male")
-        Male,
-
-        @SerialName("female")
-        Female,
-    }
-}
+)

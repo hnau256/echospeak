@@ -7,9 +7,16 @@ package hnau.echospeak.model.process
 import arrow.core.NonEmptyList
 import arrow.core.identity
 import arrow.core.toNonEmptyListOrThrow
+import hnau.common.kotlin.Loadable
+import hnau.common.kotlin.Loading
+import hnau.common.kotlin.Ready
+import hnau.common.kotlin.coroutines.flatMapWithScope
 import hnau.common.kotlin.coroutines.mapWithScope
+import hnau.common.kotlin.coroutines.toLoadableStateFlow
 import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
+import hnau.common.kotlin.fold
 import hnau.common.kotlin.foldNullable
+import hnau.common.kotlin.map
 import hnau.common.kotlin.serialization.MutableStateFlowSerializer
 import hnau.echospeak.engine.ChooseVariantConfig
 import hnau.echospeak.engine.KnowFactor
@@ -19,6 +26,7 @@ import hnau.echospeak.engine.VariantsKnowFactorsStorage
 import hnau.echospeak.engine.chooseVariant
 import hnau.echospeak.model.process.dto.Dialog
 import hnau.echospeak.model.process.dto.DialogsProvider
+import hnau.echospeak.model.utils.Speaker
 import hnau.echospeak.model.utils.VariantsKnowFactorsRepository
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +39,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import java.util.Locale
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 
@@ -47,7 +56,21 @@ class ProcessModel(
 
         val dialogsProvider: DialogsProvider
 
-        fun variant(): VariantModel.Dependencies
+        val speakerFactory: Speaker.Factory
+
+        fun variant(
+            speaker: Speaker,
+        ): VariantModel.Dependencies
+    }
+
+    @Suppress("DEPRECATION")
+    private val speaker: Deferred<Speaker?> = scope.async {
+        dependencies
+            .speakerFactory
+            .createSpeaker(
+                config = Speaker.Config.default, //TODO
+                locale = Locale("el"), //TODO
+            )
     }
 
     private val variantsIdsWithDialogs: Deferred<Pair<NonEmptyList<VariantId>, Map<VariantId, Dialog>>> =
@@ -103,14 +126,29 @@ class ProcessModel(
         }
     }
 
-    private suspend fun switchVariant() {
+    init {
+        scope.launch {
+            switchVariant(
+                variantToExclude = null,
+            )
+        }
+    }
+
+    @Serializable
+    data class Skeleton(
+        val variant: MutableStateFlow<Loadable<Pair<VariantId, VariantModel.Skeleton>>> =
+            Loading.toMutableStateFlowAsInitial(),
+    )
+
+
+    private suspend fun switchVariant(
+        variantToExclude: VariantId?,
+    ) {
         val (variantsIds, dialogsByIds) = variantsIdsWithDialogs.await()
         val variantsIdsWithoutCurrent = withContext(Dispatchers.Default) {
-            skeleton.variant.value?.first.foldNullable(
+            variantToExclude.foldNullable(
                 ifNull = { variantsIds },
-                ifNotNull = { current ->
-                    (variantsIds - current).toNonEmptyListOrThrow()
-                }
+                ifNotNull = { current -> (variantsIds - current).toNonEmptyListOrThrow() }
             )
         }
         val storage = variantsKnowFactorsStorage.await()
@@ -125,32 +163,46 @@ class ProcessModel(
         )
         skeleton
             .variant
-            .value = (newVariant.id to variantSkeleton)
+            .value = Ready(newVariant.id to variantSkeleton)
     }
 
-    init {
-        scope.launch {
-            switchVariant()
+    val variantOrLoadingOrError: StateFlow<Loadable<VariantModel?>> = speaker
+        .toLoadableStateFlow(scope)
+        .flatMapWithScope(scope) { scope, speakerOrErrorOrLoading ->
+            speakerOrErrorOrLoading.fold(
+                ifLoading = { Loading.toMutableStateFlowAsInitial() },
+                ifReady = { speakerOrError ->
+                    speakerOrError.foldNullable(
+                        ifNull = { Ready(null).toMutableStateFlowAsInitial() },
+                        ifNotNull = { speaker ->
+                            skeleton
+                                .variant
+                                .mapWithScope(scope) { scope, skeletonOrLoading ->
+                                    skeletonOrLoading.map { (id, skeleton) ->
+                                        VariantModel(
+                                            scope = scope,
+                                            dependencies = dependencies.variant(
+                                                speaker = speaker,
+                                            ),
+                                            skeleton = skeleton,
+                                            complete = { newKnowFactor ->
+                                                variantsKnowFactorsStorage.await().update(
+                                                    variantId = id,
+                                                    newKnowFactor = newKnowFactor,
+                                                )
+                                                switchVariant(
+                                                    variantToExclude = id,
+                                                )
+                                            },
+                                        )
+                                    }
+                                }
+                        }
+                    )
+                }
+            )
         }
-    }
 
-    @Serializable
-    data class Skeleton(
-        val variant: MutableStateFlow<Pair<VariantId, VariantModel.Skeleton>?> =
-            null.toMutableStateFlowAsInitial(),
-    )
-
-    val variantOrNull: StateFlow<VariantModel?> = skeleton
-        .variant
-        .mapWithScope(scope) { scope, skeletonOrNull ->
-            skeletonOrNull?.let { (_, skeleton) ->
-                VariantModel(
-                    scope = scope,
-                    dependencies = dependencies.variant(),
-                    skeleton = skeleton,
-                )
-            }
-        }
 
     companion object {
 

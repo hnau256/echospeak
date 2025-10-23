@@ -1,15 +1,16 @@
-package hnau.echospeak.model.process
+package hnau.echospeak.model.process.lines
 
+import hnau.echospeak.model.process.dto.Gender
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.Serializable
 
-class ActiveLineModel(
+class CompletedLineModel(
     scope: CoroutineScope,
     dependencies: Dependencies,
     skeleton: Skeleton,
-    onReady: () -> Unit,
-    cancel: () -> Unit,
+    gender: Gender,
+    retry: () -> Unit,
 ) {
 
     @Pipe

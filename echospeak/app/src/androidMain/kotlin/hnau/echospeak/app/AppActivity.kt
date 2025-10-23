@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import hnau.common.app.model.app.AppViewModel
 import hnau.echospeak.app.dialogs.ResourcesDialogsProvider
 import hnau.echospeak.app.knowfactors.VariantsKnowFactorsRepositoryFactoryRoomImpl
+import hnau.echospeak.app.speakler.AndroidSpeaker
 import hnau.echospeak.model.RootModel
 import hnau.echospeak.model.impl
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,7 @@ class AppActivity : ComponentActivity() {
                         context = context,
                     ),
                     dialogsProvider = ResourcesDialogsProvider(context),
+                    speakerFactory = AndroidSpeaker.Factory(context),
                 )
             ),
         )
