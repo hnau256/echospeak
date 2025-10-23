@@ -84,6 +84,7 @@ class AndroidSpeaker private constructor(
 
             val textToSpeech = createTextToSpeech(context) ?: return null
             textToSpeech.language = locale
+            textToSpeech.setSpeechRate(config.speechRate)
 
             val voice = textToSpeech.selectBestVoice(
                 locale = locale,

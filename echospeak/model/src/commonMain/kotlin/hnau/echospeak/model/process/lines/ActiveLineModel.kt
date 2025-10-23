@@ -10,8 +10,8 @@ import kotlinx.serialization.Serializable
 class ActiveLineModel(
     scope: CoroutineScope,
     dependencies: Dependencies,
-    skeleton: Skeleton,
-    gender: Gender,
+    private val skeleton: Skeleton,
+    val gender: Gender,
     onReady: () -> Unit,
     cancel: () -> Unit,
 ) {
@@ -38,4 +38,7 @@ class ActiveLineModel(
     data class Skeleton(
         val text: String,
     )
+
+    val text: String
+        get() = skeleton.text
 }

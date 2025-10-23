@@ -12,6 +12,7 @@ fun interface Speaker {
     ): Boolean
 
     data class Config(
+        val speechRate: Float,
         val tryUseNetworkVoice: Boolean,
         val pitchFactors: GenderValues<Float>,
     ) {
@@ -19,6 +20,7 @@ fun interface Speaker {
         companion object {
 
             val default: Config = Config(
+                speechRate = 0.75f,
                 tryUseNetworkVoice = true,
                 pitchFactors = GenderValues(
                     male = 0.85f,

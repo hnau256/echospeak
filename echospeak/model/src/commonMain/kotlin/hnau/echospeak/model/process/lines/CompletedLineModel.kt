@@ -8,8 +8,8 @@ import kotlinx.serialization.Serializable
 class CompletedLineModel(
     scope: CoroutineScope,
     dependencies: Dependencies,
-    skeleton: Skeleton,
-    gender: Gender,
+    private val skeleton: Skeleton,
+    val gender: Gender,
     retry: () -> Unit,
 ) {
 
@@ -20,4 +20,7 @@ class CompletedLineModel(
     data class Skeleton(
         val text: String,
     )
+
+    val text: String
+        get() = skeleton.text
 }

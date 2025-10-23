@@ -6,9 +6,12 @@
 
 package hnau.echospeak.model.process
 
+import arrow.core.Either
+import arrow.core.left
 import arrow.core.serialization.EitherSerializer
 import arrow.core.serialization.NonEmptyListSerializer
 import hnau.common.kotlin.coroutines.actionOrNullIfExecuting
+import hnau.common.kotlin.coroutines.mapState
 import hnau.common.kotlin.coroutines.mapWithScope
 import hnau.common.kotlin.foldNullable
 import hnau.common.kotlin.ifTrue
@@ -65,8 +68,14 @@ class VariantModel(
         skeleton = skeleton.lines,
     )
 
-    val lines: StateFlow<LinesModel.Lines<CompletedLineModel, ActiveLineModel>>
-        get() = linesModel.lines
+    val lines: StateFlow<List<Either<CompletedLineModel, ActiveLineModel>>> = linesModel
+        .lines
+        .mapState(scope) { lines ->
+            lines
+                .completed
+                .map { completed -> completed.left() }
+                .plus(lines.last)
+        }
 
     val completeIfAvailable: StateFlow<StateFlow<(() -> Unit)?>?> = linesModel
         .completed
