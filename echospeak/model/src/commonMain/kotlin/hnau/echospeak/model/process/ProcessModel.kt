@@ -26,6 +26,7 @@ import hnau.echospeak.engine.VariantsKnowFactorsStorage
 import hnau.echospeak.engine.chooseVariant
 import hnau.echospeak.model.process.dto.Dialog
 import hnau.echospeak.model.process.dto.DialogsProvider
+import hnau.echospeak.model.utils.EchoSpeakConfig
 import hnau.echospeak.model.utils.Speaker
 import hnau.echospeak.model.utils.SpeechRecognizer
 import hnau.echospeak.model.utils.VariantsKnowFactorsRepository
@@ -53,6 +54,8 @@ class ProcessModel(
     @Pipe
     interface Dependencies {
 
+        val config: EchoSpeakConfig
+
         val variantsKnowFactorsRepository: VariantsKnowFactorsRepository
 
         val dialogsProvider: DialogsProvider
@@ -71,15 +74,15 @@ class ProcessModel(
         dependencies
             .speakerFactory
             .createSpeaker(
-                config = Speaker.Config.default, //TODO
-                locale = locale,
+                config = dependencies.config.speakerConfig,
+                locale = dependencies.config.locale,
             )
     }
 
     private val recognizer: Deferred<SpeechRecognizer?> = scope.async {
         dependencies
             .recognizerFactory
-            .create(locale)
+            .create(dependencies.config.locale)
     }
 
     private val variantsIdsWithDialogs: Deferred<Pair<NonEmptyList<VariantId>, Map<VariantId, Dialog>>> =
@@ -164,7 +167,7 @@ class ProcessModel(
         val newVariant = chooseVariant(
             variantsIds = variantsIdsWithoutCurrent,
             storage = storage,
-            config = chooseVariantConfig,
+            config = dependencies.config.chooseVariantConfig,
         )
         val variantSkeleton = VariantModel.Skeleton(
             dialog = dialogsByIds.getValue(newVariant.id),
@@ -246,16 +249,4 @@ class ProcessModel(
                 )
             }
         }
-
-
-    companion object {
-
-        @Suppress("DEPRECATION")
-        private val locale = Locale("el", "GR") //TODO
-
-        private val chooseVariantConfig = ChooseVariantConfig(
-            baseInterval = 1.minutes,
-            weightPow = 3f,
-        )
-    }
 }

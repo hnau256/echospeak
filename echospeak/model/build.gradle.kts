@@ -23,6 +23,7 @@ kotlin {
                 implementation(libs.kotlin.serialization.json)
                 implementation(libs.kotlin.serialization.cbor)
                 implementation(libs.pipe.annotations)
+                implementation(libs.apache.text)
                 implementation(libs.enumvalues.annotations)
                 implementation(project(":echospeak:engine"))
             }

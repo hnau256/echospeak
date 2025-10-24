@@ -18,9 +18,9 @@ class CompletedLineModel(
 
     @Serializable
     data class Skeleton(
-        val text: String,
+        val line: LineSkeleton,
     )
 
     val text: String
-        get() = skeleton.text
+        get() = skeleton.line.text
 }

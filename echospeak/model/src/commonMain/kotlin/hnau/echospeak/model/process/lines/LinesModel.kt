@@ -61,7 +61,7 @@ class LinesModel(
             lines = Pair(
                 first = Lines(
                     completed = emptyList<CompletedLineModel.Skeleton>(),
-                    last = ActiveLineModel.Skeleton(lines.head).right(),
+                    last = createActiveSkeleton(lines.head).right(),
                 ),
                 second = lines.tail,
             ).toMutableStateFlowAsInitial(),
@@ -93,12 +93,12 @@ class LinesModel(
 
     private fun CompletedLineModel.Skeleton.toActive(): ActiveLineModel.Skeleton =
         ActiveLineModel.Skeleton(
-            text = text,
+            line = line,
         )
 
     private fun ActiveLineModel.Skeleton.toCompleted(): CompletedLineModel.Skeleton =
         CompletedLineModel.Skeleton(
-            text = text,
+            line = line,
         )
 
     private fun setActiveIndex(index: Int) {
@@ -127,7 +127,7 @@ class LinesModel(
 
                     val newFuture = completedLines
                         .drop(index + 1)
-                        .map(CompletedLineModel.Skeleton::text)
+                        .map { skeleton -> skeleton.line.text }
                         .plus(future)
 
                     newLines to newFuture
@@ -139,9 +139,9 @@ class LinesModel(
                         completed = completedLines.plus(
                             future
                                 .take(futuresToCompleteCount)
-                                .map(CompletedLineModel::Skeleton)
+                                .map(::createCompletedSkeleton)
                         ),
-                        last = ActiveLineModel.Skeleton(future[futuresToCompleteCount]).right(),
+                        last = createActiveSkeleton(future[futuresToCompleteCount]).right(),
                     )
 
                     val newFuture = future.drop(futuresToCompleteCount + 1)
@@ -150,7 +150,7 @@ class LinesModel(
                 }
 
                 else -> {
-                    val newCompleted = completedLines + future.map(CompletedLineModel::Skeleton)
+                    val newCompleted = completedLines + future.map(::createCompletedSkeleton)
                     val newLast = newCompleted.last().left()
                     Lines(
                         completed = newCompleted.dropLast(1),
@@ -318,4 +318,29 @@ class LinesModel(
     val completed: StateFlow<Boolean> = skeleton
         .lines
         .mapState(scope) { (_, future) -> future.isEmpty() }
+
+    companion object {
+
+        private fun createLineSkeleton(
+            text: String,
+        ): LineSkeleton = LineSkeleton(
+            text = text,
+        )
+
+        private fun createActiveSkeleton(
+            text: String,
+        ): ActiveLineModel.Skeleton = ActiveLineModel.Skeleton(
+            line = createLineSkeleton(
+                text = text,
+            )
+        )
+
+        private fun createCompletedSkeleton(
+            text: String,
+        ): CompletedLineModel.Skeleton = CompletedLineModel.Skeleton(
+            line = createLineSkeleton(
+                text = text,
+            )
+        )
+    }
 }

@@ -84,4 +84,5 @@ room-processor = { module = "androidx.room:room-compiler", version.ref = "room"}
 #other
 ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "ooxml" }
 ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
+apache-text = { module = "org.apache.commons:commons-text", version = "1.14.0" }
 

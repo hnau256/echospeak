@@ -18,16 +18,19 @@ import hnau.echospeak.app.recognizer.AndroidSpeechRecognizer
 import hnau.echospeak.app.speaker.AndroidSpeaker
 import hnau.echospeak.model.RootModel
 import hnau.echospeak.model.impl
+import hnau.echospeak.model.utils.EchoSpeakConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class AppActivity : ComponentActivity() {
 
     private val permissionRequester = ActivityPermissionRequester(this)
 
+    @Suppress("DEPRECATION")
     private val viewModel: AppViewModel<RootModel, RootModel.Skeleton> by viewModels {
         val context = applicationContext
         AppViewModel.factory(
@@ -45,6 +48,9 @@ class AppActivity : ComponentActivity() {
                             applicationContext = context,
                             intermittent = Companion.permissionRequester,
                         )
+                    ),
+                    config = EchoSpeakConfig(
+                        locale = Locale("el", "GR")
                     )
                 )
             ),

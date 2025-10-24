@@ -10,9 +10,11 @@ import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
 import hnau.common.kotlin.foldBoolean
 import hnau.common.kotlin.serialization.MutableStateFlowSerializer
 import hnau.echospeak.model.process.dto.Gender
+import hnau.echospeak.model.utils.EchoSpeakConfig
 import hnau.echospeak.model.utils.Speaker
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -33,6 +35,8 @@ class ActiveLineModel(
     @Pipe
     interface Dependencies {
 
+        val config: EchoSpeakConfig
+
         val speaker: Speaker
 
         fun recognize(): RecognizeModel.Dependencies
@@ -52,7 +56,13 @@ class ActiveLineModel(
                                 scope = scope,
                                 dependencies = dependencies.recognize(),
                                 retry = { recognizeModelVersion.update { it + 1 } },
-                                onReady = onReady,
+                                onReady = {
+                                    scope.launch {
+                                        delay(dependencies.config.pauseAfterLine)
+                                        onReady()
+                                    }
+                                },
+                                originalText = skeleton.line.text,
                             )
                         }
                 }
@@ -71,7 +81,7 @@ class ActiveLineModel(
                         .speaker
                         .speak(
                             gender = gender,
-                            text = skeleton.text,
+                            text = skeleton.line.text,
                         )
                     skeleton.alreadySpoken.value = true
                 }
@@ -80,10 +90,10 @@ class ActiveLineModel(
 
     @Serializable
     data class Skeleton(
-        val text: String,
+        val line: LineSkeleton,
         val alreadySpoken: MutableStateFlow<Boolean> = false.toMutableStateFlowAsInitial(),
     )
 
     val text: String
-        get() = skeleton.text
+        get() = skeleton.line.text
 }
