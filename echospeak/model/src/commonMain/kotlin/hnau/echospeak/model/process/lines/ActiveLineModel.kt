@@ -1,17 +1,25 @@
+@file:UseSerializers(
+    MutableStateFlowSerializer::class,
+)
+
 package hnau.echospeak.model.process.lines
 
+import hnau.common.kotlin.coroutines.flatMapWithScope
+import hnau.common.kotlin.coroutines.mapWithScope
 import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
+import hnau.common.kotlin.foldBoolean
+import hnau.common.kotlin.serialization.MutableStateFlowSerializer
 import hnau.echospeak.model.process.dto.Gender
 import hnau.echospeak.model.utils.Speaker
-import hnau.echospeak.model.utils.SpeechRecognizer
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 
 class ActiveLineModel(
     scope: CoroutineScope,
@@ -19,7 +27,7 @@ class ActiveLineModel(
     private val skeleton: Skeleton,
     val gender: Gender,
     onReady: () -> Unit,
-    cancel: () -> Unit,
+    val cancel: () -> Unit,
 ) {
 
     @Pipe
@@ -27,51 +35,53 @@ class ActiveLineModel(
 
         val speaker: Speaker
 
-        val recognizer: SpeechRecognizer
+        fun recognize(): RecognizeModel.Dependencies
     }
 
-    private val _recognitionResult: MutableStateFlow<String?> =
-        null.toMutableStateFlowAsInitial()
+    private val recognizeModelVersion: MutableStateFlow<Int> = MutableStateFlow(0)
 
-    val recognitionResult: StateFlow<String?>
-        get() = _recognitionResult
+    val recognize: StateFlow<RecognizeModel?> = skeleton
+        .alreadySpoken
+        .flatMapWithScope(scope) { scope, alreadySpoken ->
+            alreadySpoken.foldBoolean(
+                ifFalse = { null.toMutableStateFlowAsInitial() },
+                ifTrue = {
+                    recognizeModelVersion
+                        .mapWithScope(scope) { scope, _ ->
+                            RecognizeModel(
+                                scope = scope,
+                                dependencies = dependencies.recognize(),
+                                retry = { recognizeModelVersion.update { it + 1 } },
+                                onReady = onReady,
+                            )
+                        }
+                }
+            )
+        }
 
     init {
         scope.launch {
-
-            dependencies
-                .speaker
-                .speak(
-                    gender = gender,
-                    text = skeleton.text.replace(';', '?'),
-                )
-
-            _recognitionResult.value = ""
-            dependencies
-                .recognizer
-                .recognize()
-                .let { launch ->
-                    coroutineScope {
-                        val collectCurrentJob = launch {
-                            launch
-                                .current
-                                .collect { current ->
-                                    _recognitionResult.value = current
-                                }
-                        }
-                        val result = launch.result.await()
-                        _recognitionResult.value = result
-                        collectCurrentJob.cancel()
+            skeleton
+                .alreadySpoken
+                .collectLatest { alreadySpoken ->
+                    if (alreadySpoken) {
+                        return@collectLatest
                     }
+                    dependencies
+                        .speaker
+                        .speak(
+                            gender = gender,
+                            text = skeleton.text,
+                        )
+                    skeleton.alreadySpoken.value = true
                 }
-
-            onReady()
         }
     }
 
     @Serializable
     data class Skeleton(
         val text: String,
+        val alreadySpoken: MutableStateFlow<Boolean> = false.toMutableStateFlowAsInitial(),
     )
 
     val text: String

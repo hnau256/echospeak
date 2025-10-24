@@ -32,19 +32,11 @@ import kotlinx.coroutines.CoroutineScope
 
 class VariantProjector(
     scope: CoroutineScope,
-    dependencies: Dependencies,
     private val model: VariantModel,
 ) {
 
-    @Pipe
-    interface Dependencies {
-
-        fun lines(): LinesProjector.Dependencies
-    }
-
     private val lines = LinesProjector(
         scope = scope,
-        dependencies = dependencies.lines(),
         lines = model.lines,
     )
 

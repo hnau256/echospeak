@@ -7,19 +7,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import hnau.common.app.projector.uikit.state.NullableStateContent
 import hnau.common.app.projector.uikit.state.TransitionSpec
-import hnau.echospeak.model.process.ProcessModel
+import hnau.common.kotlin.coroutines.mapState
 import hnau.echospeak.model.process.lines.ActiveLineModel
-import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
 
 class ActiveLineProjector(
     scope: CoroutineScope,
-    dependencies: Dependencies,
     private val model: ActiveLineModel,
 ) {
 
-    @Pipe
-    interface Dependencies
+    private val recognize: StateFlow<RecognizeProjector?> = model
+        .recognize
+        .mapState(scope) { modelOrNull ->
+            modelOrNull?.let { model ->
+                RecognizeProjector(
+                    model = model,
+                )
+            }
+        }
 
     @Composable
     fun Content() {
@@ -32,17 +38,13 @@ class ActiveLineProjector(
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                model
-                    .recognitionResult
+                recognize
                     .collectAsState()
                     .value
                     .NullableStateContent(
                         transitionSpec = TransitionSpec.vertical(),
-                    ) { recognizedText ->
-                        Text(
-                            text = recognizedText,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
+                    ) { recognize ->
+                        recognize.Content()
                     }
             }
 

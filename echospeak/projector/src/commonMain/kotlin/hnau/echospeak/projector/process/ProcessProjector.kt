@@ -12,10 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import hnau.common.app.projector.uikit.FullScreen
 import hnau.common.app.projector.uikit.TopBar
-import hnau.common.app.projector.uikit.TopBarTitle
 import hnau.common.app.projector.uikit.state.LoadableContent
-import hnau.common.app.projector.uikit.state.NullableStateContent
-import hnau.common.app.projector.uikit.state.TransitionSpec
 import hnau.common.app.projector.utils.SlideOrientation
 import hnau.common.app.projector.utils.getTransitionSpecForSlide
 import hnau.common.app.projector.utils.horizontalDisplayPadding
@@ -25,13 +22,10 @@ import hnau.common.kotlin.coroutines.mapWithScope
 import hnau.common.kotlin.foldNullable
 import hnau.common.kotlin.map
 import hnau.echospeak.model.process.ProcessModel
-import hnau.echospeak.projector.resources.Res
 import hnau.echospeak.projector.utils.BackButtonWidth
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.datetime.format.Padding
-import org.jetbrains.compose.resources.stringResource
 
 class ProcessProjector(
     scope: CoroutineScope,
@@ -43,8 +37,6 @@ class ProcessProjector(
     interface Dependencies {
 
         val backButtonWidth: BackButtonWidth
-
-        fun variant(): VariantProjector.Dependencies
     }
 
     private val variant: StateFlow<Loadable<VariantProjector?>> = model
@@ -55,7 +47,6 @@ class ProcessProjector(
                     VariantProjector(
                         scope = scope,
                         model = variant,
-                        dependencies = dependencies.variant(),
                     )
                 }
             }

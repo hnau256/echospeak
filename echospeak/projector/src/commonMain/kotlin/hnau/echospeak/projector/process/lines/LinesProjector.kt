@@ -1,6 +1,5 @@
 package hnau.echospeak.projector.process.lines
 
-import androidx.annotation.Dimension
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,23 +22,13 @@ import hnau.common.kotlin.coroutines.mapState
 import hnau.common.kotlin.map
 import hnau.echospeak.model.process.lines.ActiveLineModel
 import hnau.echospeak.model.process.lines.CompletedLineModel
-import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
 class LinesProjector(
     scope: CoroutineScope,
-    dependencies: Dependencies,
     lines: StateFlow<List<Either<CompletedLineModel, ActiveLineModel>>>,
 ) {
-
-    @Pipe
-    interface Dependencies {
-
-        fun active(): ActiveLineProjector.Dependencies
-
-        fun completed(): CompletedLineProjector.Dependencies
-    }
 
     private val lines: StateFlow<List<IndexedValue<Either<CompletedLineProjector, ActiveLineProjector>>>> =
         lines
@@ -59,14 +48,11 @@ class LinesProjector(
                             ActiveLineProjector(
                                 scope = scope,
                                 model = model,
-                                dependencies = dependencies.active(),
                             )
                         }
                         .mapLeft { model ->
                             CompletedLineProjector(
-                                scope = scope,
                                 model = model,
-                                dependencies = dependencies.completed(),
                             )
                         }
                 }
