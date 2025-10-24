@@ -11,7 +11,11 @@ import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
 import hnau.echospeak.app.permissions.PermissionRequester
 import hnau.echospeak.model.utils.SpeechRecognizer
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import android.speech.SpeechRecognizer as SystemSpeechRecognizer
 
@@ -90,11 +94,16 @@ class AndroidSpeechRecognizer(
             field = value
         }
 
-    @Synchronized
-    override fun recognize(): SpeechRecognizer.Launch = Launch(
-        intent = intent,
-        applicationContext = applicationContext,
-    ).also(::lastLaunch::set)
+    private val recognizeMutex = Mutex()
+
+    override suspend fun recognize(): SpeechRecognizer.Launch = recognizeMutex.withLock {
+        withContext(Dispatchers.Main) {
+            Launch(
+                intent = intent,
+                applicationContext = applicationContext,
+            ).also(::lastLaunch::set)
+        }
+    }
 
     class Factory(
         private val applicationContext: Context,
@@ -124,9 +133,10 @@ class AndroidSpeechRecognizer(
                     RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                     RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                 )
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, locale.toString())
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, locale.toLanguageTag())
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, false)
             }
 
             return AndroidSpeechRecognizer(

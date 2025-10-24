@@ -88,6 +88,7 @@ kotlin {
                 implementation(libs.room.runtime)
                 implementation(libs.room.ktx)
                 implementation(libs.kotlin.serialization.json)
+                implementation(libs.kotlin.coroutines.android)
             }
         }
     }

@@ -13,7 +13,7 @@ interface SpeechRecognizer {
         val result: Deferred<String>
     }
 
-    fun recognize(): Launch
+    suspend fun recognize(): Launch
 
     interface Factory {
 

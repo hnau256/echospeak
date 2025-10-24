@@ -251,7 +251,7 @@ class ProcessModel(
     companion object {
 
         @Suppress("DEPRECATION")
-        private val locale = Locale("el") //TODO
+        private val locale = Locale("el", "GR") //TODO
 
         private val chooseVariantConfig = ChooseVariantConfig(
             baseInterval = 1.minutes,
