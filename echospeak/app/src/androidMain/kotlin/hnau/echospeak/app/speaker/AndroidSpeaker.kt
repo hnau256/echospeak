@@ -1,4 +1,4 @@
-package hnau.echospeak.app.speakler
+package hnau.echospeak.app.speaker
 
 import android.content.Context
 import android.speech.tts.TextToSpeech

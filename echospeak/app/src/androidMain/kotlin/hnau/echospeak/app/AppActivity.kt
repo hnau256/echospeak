@@ -9,17 +9,24 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import hnau.common.app.model.app.AppViewModel
+import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
 import hnau.echospeak.app.dialogs.ResourcesDialogsProvider
 import hnau.echospeak.app.knowfactors.VariantsKnowFactorsRepositoryFactoryRoomImpl
-import hnau.echospeak.app.speakler.AndroidSpeaker
+import hnau.echospeak.app.permissions.ActivityPermissionRequester
+import hnau.echospeak.app.permissions.WaitingPermissionRequester
+import hnau.echospeak.app.recognizer.AndroidSpeechRecognizer
+import hnau.echospeak.app.speaker.AndroidSpeaker
 import hnau.echospeak.model.RootModel
 import hnau.echospeak.model.impl
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class AppActivity : ComponentActivity() {
+
+    private val permissionRequester = ActivityPermissionRequester(this)
 
     private val viewModel: AppViewModel<RootModel, RootModel.Skeleton> by viewModels {
         val context = applicationContext
@@ -32,6 +39,13 @@ class AppActivity : ComponentActivity() {
                     ),
                     dialogsProvider = ResourcesDialogsProvider(context),
                     speakerFactory = AndroidSpeaker.Factory(context),
+                    recognizerFactory = AndroidSpeechRecognizer.Factory(
+                        applicationContext = context,
+                        permissionRequester = WaitingPermissionRequester(
+                            applicationContext = context,
+                            intermittent = Companion.permissionRequester,
+                        )
+                    )
                 )
             ),
         )
@@ -42,6 +56,7 @@ class AppActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Companion.permissionRequester.value = permissionRequester
         enableEdgeToEdge()
         initOnBackPressedDispatcherCallback()
         val projector = createAppProjector(
@@ -51,6 +66,11 @@ class AppActivity : ComponentActivity() {
         setContent {
             projector.Content()
         }
+    }
+
+    override fun onDestroy() {
+        Companion.permissionRequester.value = null
+        super.onDestroy()
     }
 
     @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
@@ -87,6 +107,9 @@ class AppActivity : ComponentActivity() {
     }
 
     companion object {
+
+        private val permissionRequester: MutableStateFlow<ActivityPermissionRequester?> =
+            null.toMutableStateFlowAsInitial()
 
         private val useOnBackPressedDispatcher: Boolean = Build.VERSION.SDK_INT >= 33
     }

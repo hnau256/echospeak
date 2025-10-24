@@ -27,6 +27,7 @@ import hnau.echospeak.engine.chooseVariant
 import hnau.echospeak.model.process.dto.Dialog
 import hnau.echospeak.model.process.dto.DialogsProvider
 import hnau.echospeak.model.utils.Speaker
+import hnau.echospeak.model.utils.SpeechRecognizer
 import hnau.echospeak.model.utils.VariantsKnowFactorsRepository
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
@@ -58,19 +59,27 @@ class ProcessModel(
 
         val speakerFactory: Speaker.Factory
 
+        val recognizerFactory: SpeechRecognizer.Factory
+
         fun variant(
             speaker: Speaker,
+            recognizer: SpeechRecognizer,
         ): VariantModel.Dependencies
     }
 
-    @Suppress("DEPRECATION")
     private val speaker: Deferred<Speaker?> = scope.async {
         dependencies
             .speakerFactory
             .createSpeaker(
                 config = Speaker.Config.default, //TODO
-                locale = Locale("el"), //TODO
+                locale = locale,
             )
+    }
+
+    private val recognizer: Deferred<SpeechRecognizer?> = scope.async {
+        dependencies
+            .recognizerFactory
+            .create(locale)
     }
 
     private val variantsIdsWithDialogs: Deferred<Pair<NonEmptyList<VariantId>, Map<VariantId, Dialog>>> =
@@ -166,37 +175,19 @@ class ProcessModel(
             .value = Ready(newVariant.id to variantSkeleton)
     }
 
-    val variantOrLoadingOrError: StateFlow<Loadable<VariantModel?>> = speaker
+    val variantOrLoadingOrError: StateFlow<Loadable<VariantModel?>> = recognizer
         .toLoadableStateFlow(scope)
-        .flatMapWithScope(scope) { scope, speakerOrErrorOrLoading ->
-            speakerOrErrorOrLoading.fold(
+        .flatMapWithScope(scope) { scope, recognizerOrErrorOrLoading ->
+            recognizerOrErrorOrLoading.fold(
                 ifLoading = { Loading.toMutableStateFlowAsInitial() },
-                ifReady = { speakerOrError ->
-                    speakerOrError.foldNullable(
+                ifReady = { recognizerOrError ->
+                    recognizerOrError.foldNullable(
                         ifNull = { Ready(null).toMutableStateFlowAsInitial() },
-                        ifNotNull = { speaker ->
-                            skeleton
-                                .variant
-                                .mapWithScope(scope) { scope, skeletonOrLoading ->
-                                    skeletonOrLoading.map { (id, skeleton) ->
-                                        VariantModel(
-                                            scope = scope,
-                                            dependencies = dependencies.variant(
-                                                speaker = speaker,
-                                            ),
-                                            skeleton = skeleton,
-                                            complete = { newKnowFactor ->
-                                                variantsKnowFactorsStorage.await().update(
-                                                    variantId = id,
-                                                    newKnowFactor = newKnowFactor,
-                                                )
-                                                switchVariant(
-                                                    variantToExclude = id,
-                                                )
-                                            },
-                                        )
-                                    }
-                                }
+                        ifNotNull = { recognizer ->
+                            createVariantModel(
+                                scope = scope,
+                                recognizer = recognizer,
+                            )
                         }
                     )
                 }
@@ -204,7 +195,63 @@ class ProcessModel(
         }
 
 
+    private fun createVariantModel(
+        scope: CoroutineScope,
+        recognizer: SpeechRecognizer,
+    ): StateFlow<Loadable<VariantModel?>> = speaker
+        .toLoadableStateFlow(scope)
+        .flatMapWithScope(scope)
+        { scope, speakerOrErrorOrLoading ->
+            speakerOrErrorOrLoading.fold(
+                ifLoading = { Loading.toMutableStateFlowAsInitial() },
+                ifReady = { speakerOrError ->
+                    speakerOrError.foldNullable(
+                        ifNull = { Ready(null).toMutableStateFlowAsInitial() },
+                        ifNotNull = { speaker ->
+                            createVariantModel(
+                                scope = scope,
+                                speaker = speaker,
+                                recognizer = recognizer,
+                            )
+                        }
+                    )
+                }
+            )
+        }
+
+    private fun createVariantModel(
+        scope: CoroutineScope,
+        speaker: Speaker,
+        recognizer: SpeechRecognizer,
+    ): StateFlow<Loadable<VariantModel>> = skeleton
+        .variant
+        .mapWithScope(scope) { scope, skeletonOrLoading ->
+            skeletonOrLoading.map { (id, skeleton) ->
+                VariantModel(
+                    scope = scope,
+                    dependencies = dependencies.variant(
+                        recognizer = recognizer,
+                        speaker = speaker,
+                    ),
+                    skeleton = skeleton,
+                    complete = { newKnowFactor ->
+                        variantsKnowFactorsStorage.await().update(
+                            variantId = id,
+                            newKnowFactor = newKnowFactor,
+                        )
+                        switchVariant(
+                            variantToExclude = id,
+                        )
+                    },
+                )
+            }
+        }
+
+
     companion object {
+
+        @Suppress("DEPRECATION")
+        private val locale = Locale("el") //TODO
 
         private val chooseVariantConfig = ChooseVariantConfig(
             baseInterval = 1.minutes,

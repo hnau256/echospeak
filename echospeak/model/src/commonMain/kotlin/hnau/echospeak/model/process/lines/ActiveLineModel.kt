@@ -2,6 +2,7 @@ package hnau.echospeak.model.process.lines
 
 import hnau.echospeak.model.process.dto.Gender
 import hnau.echospeak.model.utils.Speaker
+import hnau.echospeak.model.utils.SpeechRecognizer
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -20,6 +21,8 @@ class ActiveLineModel(
     interface Dependencies {
 
         val speaker: Speaker
+
+        val recognizer: SpeechRecognizer
     }
 
     init {
