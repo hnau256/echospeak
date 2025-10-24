@@ -20,7 +20,7 @@ fun interface Speaker {
         companion object {
 
             val default: Config = Config(
-                speechRate = 0.75f,
+                speechRate = 0.85f,
                 tryUseNetworkVoice = true,
                 pitchFactors = GenderValues(
                     male = 0.85f,
