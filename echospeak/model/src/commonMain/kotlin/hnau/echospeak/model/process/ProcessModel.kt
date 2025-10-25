@@ -188,74 +188,26 @@ class ProcessModel(
             .value = Ready(newVariant.id to variantSkeleton)
     }
 
-    val variantOrLoadingOrError: StateFlow<Loadable<VariantModel?>> =
-        createVariantModel(scope)
-
-    private fun createVariantModel(
-        scope: CoroutineScope,
-    ): StateFlow<Loadable<VariantModel?>> = translator
-        .toLoadableStateFlow(scope)
-        .flatMapWithScope(scope) { scope, translatorOrErrorOrLoading ->
-            translatorOrErrorOrLoading.fold(
-                ifLoading = { Loading.toMutableStateFlowAsInitial() },
-                ifReady = { translatorOrError ->
-                    translatorOrError.foldNullable(
-                        ifNull = { Ready(null).toMutableStateFlowAsInitial() },
-                        ifNotNull = { translator ->
-                            createVariantModel(
-                                translator = translator,
-                                scope = scope,
-                            )
-                        }
-                    )
-                }
-            )
+    val variantOrLoadingOrError: StateFlow<Loadable<VariantModel?>> = scope
+        .async {
+            val translator = translator.await() ?: return@async null
+            val recognizer = recognizer.await() ?: return@async null
+            val speaker = speaker.await() ?: return@async null
+            Triple(translator, recognizer, speaker)
         }
-
-
-    private fun createVariantModel(
-        scope: CoroutineScope,
-        translator: Translator,
-    ): StateFlow<Loadable<VariantModel?>> = recognizer
         .toLoadableStateFlow(scope)
-        .flatMapWithScope(scope) { scope, recognizerOrErrorOrLoading ->
-            recognizerOrErrorOrLoading.fold(
+        .flatMapWithScope(scope) { scope, instrumentsOrErrorOrLoading ->
+            instrumentsOrErrorOrLoading.fold(
                 ifLoading = { Loading.toMutableStateFlowAsInitial() },
-                ifReady = { recognizerOrError ->
-                    recognizerOrError.foldNullable(
+                ifReady = { instrumentsOrError ->
+                    instrumentsOrError.foldNullable(
                         ifNull = { Ready(null).toMutableStateFlowAsInitial() },
-                        ifNotNull = { recognizer ->
+                        ifNotNull = { (translator, recognizer, speaker) ->
                             createVariantModel(
                                 translator = translator,
-                                scope = scope,
                                 recognizer = recognizer,
-                            )
-                        }
-                    )
-                }
-            )
-        }
-
-
-    private fun createVariantModel(
-        scope: CoroutineScope,
-        recognizer: SpeechRecognizer,
-        translator: Translator,
-    ): StateFlow<Loadable<VariantModel?>> = speaker
-        .toLoadableStateFlow(scope)
-        .flatMapWithScope(scope)
-        { scope, speakerOrErrorOrLoading ->
-            speakerOrErrorOrLoading.fold(
-                ifLoading = { Loading.toMutableStateFlowAsInitial() },
-                ifReady = { speakerOrError ->
-                    speakerOrError.foldNullable(
-                        ifNull = { Ready(null).toMutableStateFlowAsInitial() },
-                        ifNotNull = { speaker ->
-                            createVariantModel(
-                                scope = scope,
                                 speaker = speaker,
-                                recognizer = recognizer,
-                                translator = translator,
+                                scope = scope,
                             )
                         }
                     )
