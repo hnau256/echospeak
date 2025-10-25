@@ -16,6 +16,7 @@ import hnau.echospeak.app.permissions.ActivityPermissionRequester
 import hnau.echospeak.app.permissions.WaitingPermissionRequester
 import hnau.echospeak.app.recognizer.AndroidSpeechRecognizer
 import hnau.echospeak.app.speaker.AndroidSpeaker
+import hnau.echospeak.app.translator.AndroidTranslator
 import hnau.echospeak.model.RootModel
 import hnau.echospeak.model.impl
 import hnau.echospeak.model.utils.EchoSpeakConfig
@@ -51,7 +52,8 @@ class AppActivity : ComponentActivity() {
                     ),
                     config = EchoSpeakConfig(
                         locale = Locale("el", "GR")
-                    )
+                    ),
+                    translatorFactory = AndroidTranslator.Factory(),
                 )
             ),
         )

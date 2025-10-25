@@ -23,6 +23,7 @@ import hnau.echospeak.model.process.dto.Gender
 import hnau.echospeak.model.process.lines.ActiveLineModel
 import hnau.echospeak.model.process.lines.CompletedLineModel
 import hnau.echospeak.model.process.lines.LinesModel
+import hnau.echospeak.model.utils.Translator
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +39,8 @@ class VariantModel(
 
     @Pipe
     interface Dependencies {
+
+        val translator: Translator
 
         fun lines(): LinesModel.Dependencies
     }

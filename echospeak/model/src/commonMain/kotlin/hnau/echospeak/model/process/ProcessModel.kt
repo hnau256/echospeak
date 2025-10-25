@@ -29,6 +29,7 @@ import hnau.echospeak.model.process.dto.DialogsProvider
 import hnau.echospeak.model.utils.EchoSpeakConfig
 import hnau.echospeak.model.utils.Speaker
 import hnau.echospeak.model.utils.SpeechRecognizer
+import hnau.echospeak.model.utils.Translator
 import hnau.echospeak.model.utils.VariantsKnowFactorsRepository
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
@@ -64,9 +65,12 @@ class ProcessModel(
 
         val recognizerFactory: SpeechRecognizer.Factory
 
+        val translatorFactory: Translator.Factory
+
         fun variant(
             speaker: Speaker,
             recognizer: SpeechRecognizer,
+            translator: Translator,
         ): VariantModel.Dependencies
     }
 
@@ -82,6 +86,12 @@ class ProcessModel(
     private val recognizer: Deferred<SpeechRecognizer?> = scope.async {
         dependencies
             .recognizerFactory
+            .create(dependencies.config.locale)
+    }
+
+    private val translator: Deferred<Translator?> = scope.async {
+        dependencies
+            .translatorFactory
             .create(dependencies.config.locale)
     }
 
@@ -178,7 +188,35 @@ class ProcessModel(
             .value = Ready(newVariant.id to variantSkeleton)
     }
 
-    val variantOrLoadingOrError: StateFlow<Loadable<VariantModel?>> = recognizer
+    val variantOrLoadingOrError: StateFlow<Loadable<VariantModel?>> =
+        createVariantModel(scope)
+
+    private fun createVariantModel(
+        scope: CoroutineScope,
+    ): StateFlow<Loadable<VariantModel?>> = translator
+        .toLoadableStateFlow(scope)
+        .flatMapWithScope(scope) { scope, translatorOrErrorOrLoading ->
+            translatorOrErrorOrLoading.fold(
+                ifLoading = { Loading.toMutableStateFlowAsInitial() },
+                ifReady = { translatorOrError ->
+                    translatorOrError.foldNullable(
+                        ifNull = { Ready(null).toMutableStateFlowAsInitial() },
+                        ifNotNull = { translator ->
+                            createVariantModel(
+                                translator = translator,
+                                scope = scope,
+                            )
+                        }
+                    )
+                }
+            )
+        }
+
+
+    private fun createVariantModel(
+        scope: CoroutineScope,
+        translator: Translator,
+    ): StateFlow<Loadable<VariantModel?>> = recognizer
         .toLoadableStateFlow(scope)
         .flatMapWithScope(scope) { scope, recognizerOrErrorOrLoading ->
             recognizerOrErrorOrLoading.fold(
@@ -188,6 +226,7 @@ class ProcessModel(
                         ifNull = { Ready(null).toMutableStateFlowAsInitial() },
                         ifNotNull = { recognizer ->
                             createVariantModel(
+                                translator = translator,
                                 scope = scope,
                                 recognizer = recognizer,
                             )
@@ -201,6 +240,7 @@ class ProcessModel(
     private fun createVariantModel(
         scope: CoroutineScope,
         recognizer: SpeechRecognizer,
+        translator: Translator,
     ): StateFlow<Loadable<VariantModel?>> = speaker
         .toLoadableStateFlow(scope)
         .flatMapWithScope(scope)
@@ -215,6 +255,7 @@ class ProcessModel(
                                 scope = scope,
                                 speaker = speaker,
                                 recognizer = recognizer,
+                                translator = translator,
                             )
                         }
                     )
@@ -226,6 +267,7 @@ class ProcessModel(
         scope: CoroutineScope,
         speaker: Speaker,
         recognizer: SpeechRecognizer,
+        translator: Translator,
     ): StateFlow<Loadable<VariantModel>> = skeleton
         .variant
         .mapWithScope(scope) { scope, skeletonOrLoading ->
@@ -235,6 +277,7 @@ class ProcessModel(
                     dependencies = dependencies.variant(
                         recognizer = recognizer,
                         speaker = speaker,
+                        translator = translator,
                     ),
                     skeleton = skeleton,
                     complete = { newKnowFactor ->

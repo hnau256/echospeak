@@ -46,6 +46,7 @@ kotlin-serialization-cbor = { module = "org.jetbrains.kotlinx:kotlinx-serializat
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
 kotlin-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinCoroutines" }
 kotlin-io = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version = "0.8.0" }
+kotlin-playServices = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version = "1.10.2"  }
 #kotest-framework-multiplatform-plugin = { module = "io.kotest:kotest-framework-multiplatform-plugin-gradle", version.ref = "kotest" }
 #kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 #kotest-junit-runner = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
@@ -78,11 +79,12 @@ hnau-dynamiccolor = { module = "com.github.hnau256:common-dynamiccolor", version
 hnau-model = { module = "com.github.hnau256.common-app:model", version.ref = "app" }
 hnau-projector = { module = "com.github.hnau256.common-app:projector", version.ref = "app" }
 #room
-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room"}
-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room"}
-room-processor = { module = "androidx.room:room-compiler", version.ref = "room"}
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-processor = { module = "androidx.room:room-compiler", version.ref = "room" }
 #other
 ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "ooxml" }
 ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
 apache-text = { module = "org.apache.commons:commons-text", version = "1.14.0" }
+google-translate = { module = "com.google.mlkit:translate", version = "17.0.1" }
 
