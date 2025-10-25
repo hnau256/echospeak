@@ -10,7 +10,7 @@ class CompletedLineModel(
     dependencies: Dependencies,
     private val skeleton: Skeleton,
     val gender: Gender,
-    retry: () -> Unit,
+    val retry: () -> Unit,
 ) {
 
     @Pipe

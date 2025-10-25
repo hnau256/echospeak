@@ -5,9 +5,11 @@
 package hnau.echospeak.model.process.lines
 
 import hnau.common.kotlin.coroutines.flatMapWithScope
+import hnau.common.kotlin.coroutines.mapState
 import hnau.common.kotlin.coroutines.mapWithScope
 import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
 import hnau.common.kotlin.foldBoolean
+import hnau.common.kotlin.ifTrue
 import hnau.common.kotlin.serialization.MutableStateFlowSerializer
 import hnau.echospeak.model.process.dto.Gender
 import hnau.echospeak.model.utils.EchoSpeakConfig
@@ -44,10 +46,26 @@ class ActiveLineModel(
 
     private val recognizeModelVersion: MutableStateFlow<Int> = MutableStateFlow(0)
 
-    val recognize: StateFlow<RecognizeModel?> = skeleton
-        .alreadySpoken
-        .flatMapWithScope(scope) { scope, alreadySpoken ->
-            alreadySpoken.foldBoolean(
+    val recognize: StateFlow<(() -> Unit)?> = skeleton
+        .state
+        .mapState(scope) { state ->
+            val isWaitingForRecognize = when (state) {
+                Skeleton.State.WaitingForRecognize -> true
+                Skeleton.State.Speaking, Skeleton.State.Recognizing -> false
+            }
+            isWaitingForRecognize.ifTrue {
+                { skeleton.state.value = Skeleton.State.Recognizing }
+            }
+        }
+
+    val recognizing: StateFlow<RecognizeModel?> = skeleton
+        .state
+        .flatMapWithScope(scope) { scope, state ->
+            val isRecognizing = when (state) {
+                Skeleton.State.Recognizing -> true
+                Skeleton.State.Speaking, Skeleton.State.WaitingForRecognize -> false
+            }
+            isRecognizing.foldBoolean(
                 ifFalse = { null.toMutableStateFlowAsInitial() },
                 ifTrue = {
                     recognizeModelVersion
@@ -72,9 +90,13 @@ class ActiveLineModel(
     init {
         scope.launch {
             skeleton
-                .alreadySpoken
-                .collectLatest { alreadySpoken ->
-                    if (alreadySpoken) {
+                .state
+                .collectLatest { state ->
+                    val isSpeaking = when (state) {
+                        Skeleton.State.Speaking -> true
+                        Skeleton.State.WaitingForRecognize, Skeleton.State.Recognizing -> false
+                    }
+                    if (!isSpeaking) {
                         return@collectLatest
                     }
                     dependencies
@@ -83,7 +105,7 @@ class ActiveLineModel(
                             gender = gender,
                             text = skeleton.line.text,
                         )
-                    skeleton.alreadySpoken.value = true
+                    skeleton.state.value = Skeleton.State.WaitingForRecognize
                 }
         }
     }
@@ -91,8 +113,12 @@ class ActiveLineModel(
     @Serializable
     data class Skeleton(
         val line: LineSkeleton,
-        val alreadySpoken: MutableStateFlow<Boolean> = false.toMutableStateFlowAsInitial(),
-    )
+        val state: MutableStateFlow<State> = State.Speaking.toMutableStateFlowAsInitial(),
+    ) {
+
+        enum class State { Speaking, WaitingForRecognize, Recognizing }
+
+    }
 
     val text: String
         get() = skeleton.line.text
