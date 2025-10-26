@@ -40,8 +40,6 @@ class VariantModel(
     @Pipe
     interface Dependencies {
 
-        val translator: Translator
-
         fun lines(): LinesModel.Dependencies
     }
 

@@ -42,7 +42,16 @@ class ActiveLineModel(
         val speaker: Speaker
 
         fun recognize(): RecognizeModel.Dependencies
+
+        fun translate(): TranslateModel.Dependencies
     }
+
+    val translate = TranslateModel(
+        scope = scope,
+        dependencies = dependencies.translate(),
+        skeleton = skeleton.translate,
+        textToTranslate = skeleton.line.text,
+    )
 
     private val recognizeModelVersion: MutableStateFlow<Int> = MutableStateFlow(0)
 
@@ -114,6 +123,7 @@ class ActiveLineModel(
     data class Skeleton(
         val line: LineSkeleton,
         val state: MutableStateFlow<State> = State.Speaking.toMutableStateFlowAsInitial(),
+        val translate: TranslateModel.Skeleton = TranslateModel.Skeleton(),
     ) {
 
         enum class State { Speaking, WaitingForRecognize, Recognizing }

@@ -18,7 +18,6 @@ import hnau.common.kotlin.fold
 import hnau.common.kotlin.foldNullable
 import hnau.common.kotlin.map
 import hnau.common.kotlin.serialization.MutableStateFlowSerializer
-import hnau.echospeak.engine.ChooseVariantConfig
 import hnau.echospeak.engine.KnowFactor
 import hnau.echospeak.engine.VariantId
 import hnau.echospeak.engine.VariantLastAnswerInfo
@@ -42,9 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
-import java.util.Locale
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.minutes
 
 class ProcessModel(
     scope: CoroutineScope,

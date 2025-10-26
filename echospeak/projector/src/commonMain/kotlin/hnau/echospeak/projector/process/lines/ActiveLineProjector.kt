@@ -30,6 +30,11 @@ class ActiveLineProjector(
     private val model: ActiveLineModel,
 ) {
 
+    private val translate = TranslateProjector(
+        scope = scope,
+        model = model.translate,
+    )
+
     private val recognize: StateFlow<RecognizeProjector?> = model
         .recognizing
         .mapState(scope) { modelOrNull ->
@@ -58,10 +63,15 @@ class ActiveLineProjector(
                     Column(
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text(
-                            text = model.text,
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
+                        translate.MainContent(Modifier.fillMaxWidth())
+                        Row {
+                            Text(
+                                modifier = Modifier.weight(1f),
+                                text = model.text,
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            translate.IconContent()
+                        }
                         model
                             .recognize
                             .collectAsState()

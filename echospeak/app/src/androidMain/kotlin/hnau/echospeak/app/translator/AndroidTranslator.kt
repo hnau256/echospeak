@@ -54,7 +54,5 @@ class AndroidTranslator(
 
         private val Locale.translateLanguage: String?
             get() = language.let(TranslateLanguage::fromLanguageTag)
-
-
     }
 }
