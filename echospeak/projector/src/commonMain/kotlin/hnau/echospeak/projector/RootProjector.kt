@@ -7,6 +7,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import hnau.common.app.projector.uikit.backbutton.BackButtonProjector
 import hnau.echospeak.model.RootModel
 import hnau.echospeak.projector.process.ProcessProjector
+import hnau.echospeak.projector.themes.ThemesStackProjector
 import hnau.echospeak.projector.utils.BackButtonWidth
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
@@ -23,6 +24,10 @@ class RootProjector(
         fun process(
             backButtonWidth: BackButtonWidth,
         ): ProcessProjector.Dependencies
+
+        fun themes(
+            backButtonWidth: BackButtonWidth,
+        ): ThemesStackProjector.Dependencies
 
         companion object
     }
@@ -44,13 +49,21 @@ class RootProjector(
         ),
     )
 
+    private val loadThemes = ThemesStackProjector(
+        scope = scope,
+        model = model.themes,
+        dependencies = dependencies.themes(
+            backButtonWidth = BackButtonWidth.create(backButton),
+        ),
+    )
+
     @Composable
     fun Content() {
         CompositionLocalProvider(
             LocalContentColor provides MaterialTheme.colorScheme.onBackground,
             //LocalDensity provides Density(LocalDensity.current.density * 1.1f),
         ) {
-            process.Content()
+            loadThemes.Content()
             backButton.Content()
             //bubblesHolder.Content()
         }

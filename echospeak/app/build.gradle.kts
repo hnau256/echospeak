@@ -85,6 +85,7 @@ kotlin {
             dependencies {
                 implementation(libs.android.activity.compose)
                 implementation(libs.android.appcompat)
+                implementation(libs.arrow.serialization)
                 implementation(libs.room.runtime)
                 implementation(libs.room.ktx)
                 implementation(libs.kotlin.serialization.json)

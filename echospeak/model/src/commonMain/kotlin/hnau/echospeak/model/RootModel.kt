@@ -1,8 +1,8 @@
 package hnau.echospeak.model
 
 import hnau.common.app.model.goback.GoBackHandler
-import hnau.common.app.model.goback.NeverGoBackHandler
 import hnau.echospeak.model.process.ProcessModel
+import hnau.echospeak.model.themes.ThemesStackModel
 import hnau.echospeak.model.utils.ExerciseId
 import hnau.echospeak.model.utils.VariantsKnowFactorsRepository
 import hnau.pipe.annotations.Pipe
@@ -24,12 +24,15 @@ class RootModel(
             variantsKnowFactorsRepository: VariantsKnowFactorsRepository,
         ): ProcessModel.Dependencies
 
+        fun themes(): ThemesStackModel.Dependencies
+
         companion object
     }
 
     @Serializable
     data class Skeleton(
         val process: ProcessModel.Skeleton = ProcessModel.Skeleton(),
+        val themes: ThemesStackModel.Skeleton = ThemesStackModel.Skeleton(),
     )
 
     val process = ProcessModel(
@@ -42,6 +45,12 @@ class RootModel(
         skeleton = skeleton.process,
     )
 
+    val themes = ThemesStackModel(
+        scope = scope,
+        dependencies = dependencies.themes(),
+        skeleton = skeleton.themes,
+    )
+
     val goBackHandler: GoBackHandler
-        get() = NeverGoBackHandler
+        get() = this@RootModel.themes.goBackHandler
 }

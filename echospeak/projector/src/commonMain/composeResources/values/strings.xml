@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">EchoSpeak</string>
     <string name="repeat_after">Repeat after</string>
+    <string name="themes">Темы</string>
 </resources>
