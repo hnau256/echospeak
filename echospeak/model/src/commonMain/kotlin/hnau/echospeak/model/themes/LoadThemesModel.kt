@@ -36,7 +36,7 @@ class LoadThemesModel(
         val themesProvider: ThemesProvider
 
         fun themes(
-            storage: VariantsKnowFactorsStorage,
+           // storage: VariantsKnowFactorsStorage,
         ): ChooseOrProcessThemesModel.Dependencies
     }
 
@@ -69,7 +69,7 @@ class LoadThemesModel(
                 ChooseOrProcessThemesModel(
                     scope = scope,
                     dependencies = dependencies.themes(
-                        storage = storage,
+                        //storage = storage,
                     ),
                     skeleton = skeleton::themes
                         .toAccessor()

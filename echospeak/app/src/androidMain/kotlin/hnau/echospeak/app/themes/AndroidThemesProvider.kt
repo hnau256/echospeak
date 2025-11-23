@@ -2,18 +2,13 @@ package hnau.echospeak.app.themes
 
 import android.content.Context
 import arrow.core.NonEmptyList
-import arrow.core.nonEmptyListOf
 import arrow.core.serialization.NonEmptyListSerializer
-import arrow.core.toNonEmptyListOrThrow
 import hnau.echospeak.R
-import hnau.echospeak.model.process.dto.Dialog
 import hnau.echospeak.model.themes.dto.Phrase
 import hnau.echospeak.model.themes.dto.ThemeId
 import hnau.echospeak.model.themes.dto.ThemesProvider
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream

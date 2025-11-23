@@ -10,14 +10,12 @@ import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import hnau.common.app.model.app.AppViewModel
 import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
-import hnau.echospeak.app.dialogs.ResourcesDialogsProvider
 import hnau.echospeak.app.knowfactors.VariantsKnowFactorsRepositoryFactoryRoomImpl
 import hnau.echospeak.app.permissions.ActivityPermissionRequester
 import hnau.echospeak.app.permissions.WaitingPermissionRequester
 import hnau.echospeak.app.recognizer.AndroidSpeechRecognizer
 import hnau.echospeak.app.speaker.AndroidSpeaker
 import hnau.echospeak.app.themes.AndroidThemesProvider
-import hnau.echospeak.app.translator.AndroidTranslator
 import hnau.echospeak.model.RootModel
 import hnau.echospeak.model.impl
 import hnau.echospeak.model.utils.EchoSpeakConfig
@@ -39,7 +37,7 @@ class AppActivity : ComponentActivity() {
             context = context,
             seed = createEchoSpeakAppSeed(
                 rootModelDependencies = RootModel.Dependencies.impl(
-                    variantsKnowFactorsRepositoryFactory = VariantsKnowFactorsRepositoryFactoryRoomImpl(
+                    variantsKnowFactorsProviderFactory = VariantsKnowFactorsRepositoryFactoryRoomImpl(
                         context = context,
                     ),
                     //dialogsProvider = ResourcesDialogsProvider(context),
@@ -54,7 +52,7 @@ class AppActivity : ComponentActivity() {
                     config = EchoSpeakConfig(
                         locale = Locale("el", "GR")
                     ),
-                    translatorFactory = AndroidTranslator.Factory(),
+                    /*translatorFactory = AndroidTranslator.Factory(),*/
                     themesProvider = AndroidThemesProvider(
                         context = context,
                     ),
