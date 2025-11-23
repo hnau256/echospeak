@@ -1,19 +1,19 @@
 package hnau.echospeak.model.utils
 
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.StateFlow
 import java.util.Locale
 
 interface SpeechRecognizer {
 
-    interface Launch {
+    data class State(
+        val recognizedText: String,
+        val stage: Stage,
+    ) {
 
-        val current: StateFlow<String>
-
-        val result: Deferred<String>
+        enum class Stage { InProgress, Finished }
     }
 
-    suspend fun recognize(): Launch
+    suspend fun recognize(): StateFlow<State>
 
     interface Factory {
 

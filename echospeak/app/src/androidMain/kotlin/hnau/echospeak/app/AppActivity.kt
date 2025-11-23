@@ -42,7 +42,7 @@ class AppActivity : ComponentActivity() {
                     variantsKnowFactorsRepositoryFactory = VariantsKnowFactorsRepositoryFactoryRoomImpl(
                         context = context,
                     ),
-                    dialogsProvider = ResourcesDialogsProvider(context),
+                    //dialogsProvider = ResourcesDialogsProvider(context),
                     speakerFactory = AndroidSpeaker.Factory(context),
                     recognizerFactory = AndroidSpeechRecognizer.Factory(
                         applicationContext = context,

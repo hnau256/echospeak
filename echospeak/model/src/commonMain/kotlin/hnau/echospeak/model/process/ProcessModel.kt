@@ -29,7 +29,7 @@ import hnau.echospeak.model.utils.EchoSpeakConfig
 import hnau.echospeak.model.utils.Speaker
 import hnau.echospeak.model.utils.SpeechRecognizer
 import hnau.echospeak.model.utils.Translator
-import hnau.echospeak.model.utils.VariantsKnowFactorsRepository
+import hnau.echospeak.model.utils.VariantsKnowFactorsProvider
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -54,7 +54,7 @@ class ProcessModel(
 
         val config: EchoSpeakConfig
 
-        val variantsKnowFactorsRepository: VariantsKnowFactorsRepository
+        val variantsKnowFactorsProvider: VariantsKnowFactorsProvider
 
         val dialogsProvider: DialogsProvider
 
@@ -115,7 +115,7 @@ class ProcessModel(
     private val variantsKnowFactorsStorage: Deferred<VariantsKnowFactorsStorage> = scope.async {
 
         val variantsLastAnswerInfo: MutableMap<VariantId, VariantLastAnswerInfo> = dependencies
-            .variantsKnowFactorsRepository
+            .variantsKnowFactorsProvider
             .loadAllKnowFactors()
             .toMutableMap()
 
@@ -126,18 +126,18 @@ class ProcessModel(
             ): VariantLastAnswerInfo? = variantsLastAnswerInfo[id]
 
             override suspend fun update(
-                variantId: VariantId,
+                id: VariantId,
                 newKnowFactor: KnowFactor
             ) {
                 val info = VariantLastAnswerInfo(
                     knowFactor = newKnowFactor,
                     lastIterationTimestamp = Clock.System.now()
                 )
-                variantsLastAnswerInfo[variantId] = info
+                variantsLastAnswerInfo[id] = info
                 dependencies
-                    .variantsKnowFactorsRepository
+                    .variantsKnowFactorsProvider
                     .updateVariant(
-                        id = variantId,
+                        id = id,
                         info = info,
                     )
             }
@@ -231,7 +231,7 @@ class ProcessModel(
                     skeleton = skeleton,
                     complete = { newKnowFactor ->
                         variantsKnowFactorsStorage.await().update(
-                            variantId = id,
+                            id = id,
                             newKnowFactor = newKnowFactor,
                         )
                         switchVariant(

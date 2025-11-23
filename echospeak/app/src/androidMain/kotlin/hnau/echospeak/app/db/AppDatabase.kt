@@ -7,6 +7,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactors
 import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactorsDao
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Database(
     entities = [
@@ -21,14 +23,16 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
 
-        fun create(
+        suspend fun create(
             context: Context,
-        ): AppDatabase = Room
-            .databaseBuilder(
-                context = context,
-                klass = AppDatabase::class.java,
-                name = "echospeak"
-            )
-            .build()
+        ): AppDatabase = withContext(Dispatchers.IO) {
+            Room
+                .databaseBuilder(
+                    context = context,
+                    klass = AppDatabase::class.java,
+                    name = "echospeak"
+                )
+                .build()
+        }
     }
 }

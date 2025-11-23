@@ -7,7 +7,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import hnau.common.app.projector.uikit.backbutton.BackButtonProjector
 import hnau.echospeak.model.RootModel
 import hnau.echospeak.projector.process.ProcessProjector
-import hnau.echospeak.projector.themes.ThemesStackProjector
+import hnau.echospeak.projector.themes.LoadThemesProjector
 import hnau.echospeak.projector.utils.BackButtonWidth
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
@@ -21,13 +21,9 @@ class RootProjector(
     @Pipe
     interface Dependencies {
 
-        fun process(
-            backButtonWidth: BackButtonWidth,
-        ): ProcessProjector.Dependencies
-
         fun themes(
             backButtonWidth: BackButtonWidth,
-        ): ThemesStackProjector.Dependencies
+        ): LoadThemesProjector.Dependencies
 
         companion object
     }
@@ -41,15 +37,7 @@ class RootProjector(
         goBackHandler = model.goBackHandler,
     )
 
-    private val process = ProcessProjector(
-        scope = scope,
-        model = model.process,
-        dependencies = dependencies.process(
-            backButtonWidth = BackButtonWidth.create(backButton),
-        ),
-    )
-
-    private val loadThemes = ThemesStackProjector(
+    private val loadThemes = LoadThemesProjector(
         scope = scope,
         model = model.themes,
         dependencies = dependencies.themes(

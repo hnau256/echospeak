@@ -2,9 +2,8 @@ package hnau.echospeak.model
 
 import hnau.common.app.model.goback.GoBackHandler
 import hnau.echospeak.model.process.ProcessModel
-import hnau.echospeak.model.themes.ThemesStackModel
-import hnau.echospeak.model.utils.ExerciseId
-import hnau.echospeak.model.utils.VariantsKnowFactorsRepository
+import hnau.echospeak.model.themes.LoadThemesModel
+import hnau.echospeak.model.utils.VariantsKnowFactorsProvider
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.Serializable
@@ -18,13 +17,13 @@ class RootModel(
     @Pipe
     interface Dependencies {
 
-        val variantsKnowFactorsRepositoryFactory: VariantsKnowFactorsRepository.Factory
+        val variantsKnowFactorsProviderFactory: VariantsKnowFactorsProvider.Factory
 
-        fun process(
+        /*fun process(
             variantsKnowFactorsRepository: VariantsKnowFactorsRepository,
-        ): ProcessModel.Dependencies
+        ): ProcessModel.Dependencies*/
 
-        fun themes(): ThemesStackModel.Dependencies
+        fun themes(): LoadThemesModel.Dependencies
 
         companion object
     }
@@ -32,20 +31,10 @@ class RootModel(
     @Serializable
     data class Skeleton(
         val process: ProcessModel.Skeleton = ProcessModel.Skeleton(),
-        val themes: ThemesStackModel.Skeleton = ThemesStackModel.Skeleton(),
+        val themes: LoadThemesModel.Skeleton = LoadThemesModel.Skeleton(),
     )
 
-    val process = ProcessModel(
-        scope = scope,
-        dependencies = dependencies.process(
-            variantsKnowFactorsRepository = dependencies.variantsKnowFactorsRepositoryFactory.create(
-                exerciseId = ExerciseId("echo_speak_dialogs"),
-            )
-        ),
-        skeleton = skeleton.process,
-    )
-
-    val themes = ThemesStackModel(
+    val themes = LoadThemesModel(
         scope = scope,
         dependencies = dependencies.themes(),
         skeleton = skeleton.themes,

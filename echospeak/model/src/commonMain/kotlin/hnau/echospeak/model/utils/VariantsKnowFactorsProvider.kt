@@ -1,10 +1,9 @@
 package hnau.echospeak.model.utils
 
-import hnau.echospeak.engine.KnowFactor
 import hnau.echospeak.engine.VariantId
 import hnau.echospeak.engine.VariantLastAnswerInfo
 
-interface VariantsKnowFactorsRepository {
+interface VariantsKnowFactorsProvider {
 
     suspend fun loadAllKnowFactors(): Map<VariantId, VariantLastAnswerInfo>
 
@@ -17,6 +16,6 @@ interface VariantsKnowFactorsRepository {
 
         fun create(
             exerciseId: ExerciseId,
-        ): VariantsKnowFactorsRepository
+        ): VariantsKnowFactorsProvider
     }
 }

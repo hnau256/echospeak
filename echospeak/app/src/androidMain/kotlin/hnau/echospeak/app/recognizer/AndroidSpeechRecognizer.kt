@@ -10,9 +10,10 @@ import arrow.core.nonEmptySetOf
 import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
 import hnau.echospeak.app.permissions.PermissionRequester
 import hnau.echospeak.model.utils.SpeechRecognizer
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -24,15 +25,15 @@ class AndroidSpeechRecognizer(
     private val intent: Intent,
 ) : SpeechRecognizer {
 
+    @OptIn(ExperimentalForInheritanceCoroutinesApi::class)
     class Launch(
         applicationContext: Context,
         intent: Intent,
-    ) : SpeechRecognizer.Launch {
-
-        override val current: MutableStateFlow<String> =
-            "".toMutableStateFlowAsInitial()
-
-        override val result: CompletableDeferred<String> = CompletableDeferred()
+        private val state: MutableStateFlow<SpeechRecognizer.State> = SpeechRecognizer.State(
+            recognizedText = "",
+            stage = SpeechRecognizer.State.Stage.InProgress,
+        ).toMutableStateFlowAsInitial()
+    ) : StateFlow<SpeechRecognizer.State> by state {
 
         private val recognizer: SystemSpeechRecognizer = SystemSpeechRecognizer
             .createSpeechRecognizer(applicationContext)
@@ -47,7 +48,10 @@ class AndroidSpeechRecognizer(
                                 .getStringArrayList(SystemSpeechRecognizer.RESULTS_RECOGNITION)
                                 ?.firstOrNull()
                                 .orEmpty()
-                            current.value = currentText
+                            state.value = SpeechRecognizer.State(
+                                recognizedText = currentText,
+                                stage = SpeechRecognizer.State.Stage.InProgress,
+                            )
                         }
 
                         override fun onResults(
@@ -57,7 +61,10 @@ class AndroidSpeechRecognizer(
                                 .getStringArrayList(SystemSpeechRecognizer.RESULTS_RECOGNITION)
                                 ?.firstOrNull()
                                 .orEmpty()
-                            result.complete(resultText)
+                            state.value = SpeechRecognizer.State(
+                                recognizedText = resultText,
+                                stage = SpeechRecognizer.State.Stage.Finished,
+                            )
                         }
 
                         override fun onBeginningOfSpeech() {}
@@ -68,7 +75,11 @@ class AndroidSpeechRecognizer(
 
                         override fun onError(error: Int) {
                             //TODO()
-                            result.complete("<Error>")
+
+                            state.value = SpeechRecognizer.State(
+                                recognizedText = "<Error>",
+                                stage = SpeechRecognizer.State.Stage.Finished,
+                            )
                         }
 
                         override fun onEvent(eventType: Int, params: Bundle?) {}
@@ -83,7 +94,11 @@ class AndroidSpeechRecognizer(
             }
 
         fun cancel() {
-            result.complete("")
+
+            state.value = SpeechRecognizer.State(
+                recognizedText = "",
+                stage = SpeechRecognizer.State.Stage.Finished,
+            )
             recognizer.cancel()
         }
     }
@@ -96,7 +111,7 @@ class AndroidSpeechRecognizer(
 
     private val recognizeMutex = Mutex()
 
-    override suspend fun recognize(): SpeechRecognizer.Launch = recognizeMutex.withLock {
+    override suspend fun recognize(): StateFlow<SpeechRecognizer.State> = recognizeMutex.withLock {
         withContext(Dispatchers.Main) {
             Launch(
                 intent = intent,

@@ -7,39 +7,40 @@ import androidx.compose.ui.Modifier
 import hnau.common.app.projector.uikit.state.LoadableContent
 import hnau.common.app.projector.uikit.state.TransitionSpec
 import hnau.common.kotlin.Loadable
-import hnau.common.kotlin.coroutines.mapState
+import hnau.common.kotlin.coroutines.mapWithScope
 import hnau.common.kotlin.map
-import hnau.echospeak.model.themes.ThemesModel
+import hnau.echospeak.model.themes.LoadThemesModel
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
-class ThemesProjector(
+class LoadThemesProjector(
     scope: CoroutineScope,
-    model: ThemesModel,
+    model: LoadThemesModel,
     dependencies: Dependencies,
 ) {
 
     @Pipe
     interface Dependencies {
 
-        fun list(): ThemesListProjector.Dependencies
+        fun chooseOrProcess(): ChooseOrProcessThemesProjector.Dependencies
     }
 
-    private val list: StateFlow<Loadable<ThemesListProjector>> = model
-        .list
-        .mapState(scope) { themesOrLoading ->
+    private val chooseOrProcess: StateFlow<Loadable<ChooseOrProcessThemesProjector>> = model
+        .chooseOrProcess
+        .mapWithScope(scope) { scope, themesOrLoading ->
             themesOrLoading.map { themes ->
-                ThemesListProjector(
+                ChooseOrProcessThemesProjector(
+                    scope = scope,
                     model = themes,
-                    dependencies = dependencies.list(),
+                    dependencies = dependencies.chooseOrProcess(),
                 )
             }
         }
 
     @Composable
     fun Content() {
-        list
+        chooseOrProcess
             .collectAsState()
             .value
             .LoadableContent(

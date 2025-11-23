@@ -7,7 +7,7 @@ interface VariantsKnowFactorsStorage {
     ): VariantLastAnswerInfo?
 
     suspend fun update(
-        variantId: VariantId,
+        id: VariantId,
         newKnowFactor: KnowFactor,
     )
 }

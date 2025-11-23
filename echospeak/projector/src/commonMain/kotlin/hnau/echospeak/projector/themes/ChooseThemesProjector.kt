@@ -30,15 +30,15 @@ import hnau.common.app.projector.utils.Icon
 import hnau.common.app.projector.utils.Overcompose
 import hnau.common.app.projector.utils.horizontalDisplayPadding
 import hnau.common.app.projector.utils.verticalDisplayPadding
-import hnau.echospeak.model.themes.ThemesListModel
+import hnau.echospeak.model.themes.ChooseThemesModel
 import hnau.echospeak.projector.resources.Res
 import hnau.echospeak.projector.resources.themes
 import hnau.echospeak.projector.utils.BackButtonWidth
 import hnau.pipe.annotations.Pipe
 import org.jetbrains.compose.resources.stringResource
 
-class ThemesListProjector(
-    private val model: ThemesListModel,
+class ChooseThemesProjector(
+    private val model: ChooseThemesModel,
     private val dependencies: Dependencies,
 ) {
 

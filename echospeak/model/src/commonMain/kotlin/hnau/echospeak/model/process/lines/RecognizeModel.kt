@@ -63,7 +63,7 @@ class RecognizeModel(
                 }
 
             val factor = calcCorrectFactor(text)
-            val success = factor > dependencies.config.minAllowedRecognitionSimilarity
+            val success = factor > dependencies.config.minAllowedRecognitionSimilarity.factor
 
             _correctFactor.value = factor to success
 
