@@ -29,6 +29,7 @@ import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 
@@ -171,7 +172,12 @@ class ChooseOrProcessThemesModel(
                             id = id,
                             isSelected = selected,
                             switchIsSelected = {
-
+                                skeleton.unselectedThemes.update { unselectedThemes ->
+                                    (id !in unselectedThemes).foldBoolean(
+                                        ifTrue = { unselectedThemes + id },
+                                        ifFalse = { unselectedThemes - id },
+                                    )
+                                }
                             },
                         )
                     },
@@ -221,9 +227,9 @@ class ChooseOrProcessThemesModel(
             is ChooseOrProcessStateModel.Process -> state
                 .model
                 .goBackHandler
-                .mapState(scope) {processGoBackHandler ->
-                    processGoBackHandler.ifNull { {skeleton.launched.value = false}  }
-            }
+                .mapState(scope) { processGoBackHandler ->
+                    processGoBackHandler.ifNull { { skeleton.launched.value = false } }
+                }
         }
     }
 }
