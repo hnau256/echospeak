@@ -15,8 +15,9 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
 
-data class ChosenVariant(
-    val id: VariantId,
+@Serializable
+data class ChosenVariant<out V>(
+    val variant: V,
     val learnInfo: LearnInfo?,
 ) {
 
@@ -27,38 +28,40 @@ data class ChosenVariant(
     )
 }
 
-suspend fun chooseVariant(
-    variantsIds: NonEmptyList<VariantId>,
+suspend fun <V> chooseVariant(
+    variants: NonEmptyList<V>,
+    extractId: (V) -> VariantId,
     storage: VariantsKnowFactorsStorage,
     config: ChooseVariantConfig,
-): ChosenVariant = withContext(Dispatchers.Default) {
+): ChosenVariant<V> = withContext(Dispatchers.Default) {
 
     val (unansweredId, answered) =
-        variantsIds.fold<_, Pair<VariantId?, List<Pair<VariantId, VariantLastAnswerInfo>>>>(
+        variants.fold<_, Pair<V?, List<Pair<V, VariantLastAnswerInfo>>>>(
             initial = null to emptyList(),
-        ) { (unansweredId, answered), id ->
+        ) { (unanswered, answered), variant ->
+            val id = extractId(variant)
             storage[id].foldNullable(
                 ifNull = {
-                    val newUnansweredId = unansweredId ?: id
+                    val newUnansweredId = unanswered ?: variant
                     newUnansweredId to answered
                 },
                 ifNotNull = { info ->
-                    unansweredId to (answered + (id to info))
+                    unanswered to (answered + (variant to info))
                 }
             )
         }
 
     val now = Clock.System.now()
-    val variantsToChooseFrom: NonEmptyList<ChosenVariant> =
+    val variantsToChooseFrom: NonEmptyList<ChosenVariant<V>> =
         buildList {
             addAll(answered)
             unansweredId?.let { id -> add(id to null) }
         }
             .toNonEmptyListOrNull()
-            .ifNull { nonEmptyListOf(variantsIds.head to null) }
-            .map { (id, infoOrNull) ->
+            .ifNull { nonEmptyListOf(variants.head to null) }
+            .map { (variant, infoOrNull) ->
                 ChosenVariant(
-                    id = id,
+                    variant = variant,
                     learnInfo = infoOrNull?.let { info ->
                         ChosenVariant.LearnInfo(
                             info = info,
