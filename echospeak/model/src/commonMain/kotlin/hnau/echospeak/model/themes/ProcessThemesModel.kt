@@ -30,30 +30,15 @@ class ProcessThemesModel(
 
         val storage: VariantsKnowFactorsStorage
 
-        val speakerFactory: Speaker.Factory
+        val speaker: Speaker
 
-        val recognizerFactory: SpeechRecognizer.Factory
+        val recognizer: SpeechRecognizer
     }
 
     @Serializable
     /*data*/ class Skeleton(
 
     )
-
-    private val speaker: Deferred<Speaker?> = scope.async {
-        dependencies
-            .speakerFactory
-            .createSpeaker(
-                config = dependencies.config.speakerConfig,
-                locale = dependencies.config.locale,
-            )
-    }
-
-    private val recognizer: Deferred<SpeechRecognizer?> = scope.async {
-        dependencies
-            .recognizerFactory
-            .create(dependencies.config.locale)
-    }
 
 
     val goBackHandler: GoBackHandler

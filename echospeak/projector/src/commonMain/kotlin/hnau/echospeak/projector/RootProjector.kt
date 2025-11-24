@@ -20,9 +20,9 @@ class RootProjector(
     @Pipe
     interface Dependencies {
 
-        fun themes(
+        fun prepare(
             backButtonWidth: BackButtonWidth,
-        ): LoadThemesProjector.Dependencies
+        ): PrepareProjector.Dependencies
 
         companion object
     }
@@ -36,10 +36,10 @@ class RootProjector(
         goBackHandler = model.goBackHandler,
     )
 
-    private val loadThemes = LoadThemesProjector(
+    private val loadThemes = PrepareProjector(
         scope = scope,
-        model = model.themes,
-        dependencies = dependencies.themes(
+        model = model.prepare,
+        dependencies = dependencies.prepare(
             backButtonWidth = BackButtonWidth.create(backButton),
         ),
     )
