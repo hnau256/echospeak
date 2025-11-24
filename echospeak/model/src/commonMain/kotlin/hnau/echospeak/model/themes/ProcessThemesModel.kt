@@ -28,7 +28,7 @@ class ProcessThemesModel(
 
         val config: EchoSpeakConfig
 
-        //val storage: VariantsKnowFactorsStorage
+        val storage: VariantsKnowFactorsStorage
 
         val speakerFactory: Speaker.Factory
 

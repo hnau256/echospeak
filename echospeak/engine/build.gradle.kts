@@ -7,6 +7,7 @@ plugins {
 }
 
 kotlin {
+    linuxX64()
     sourceSets {
         all {
             languageSettings {
