@@ -5,6 +5,7 @@ import hnau.echospeak.engine.KnowFactor
 import hnau.echospeak.model.themes.dto.PhraseVariant
 import hnau.echospeak.model.utils.Speaker
 import hnau.echospeak.model.utils.SpeechRecognizer
+import hnau.echospeak.model.utils.compare.CompareRecognizer
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.Serializable
@@ -22,7 +23,7 @@ class PhraseModel(
 
         val speaker: Speaker
 
-        val recognizer: SpeechRecognizer
+        val recognizer: CompareRecognizer
     }
 
     @Serializable

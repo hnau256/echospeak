@@ -16,6 +16,7 @@ import hnau.echospeak.model.utils.ExerciseId
 import hnau.echospeak.model.utils.Speaker
 import hnau.echospeak.model.utils.SpeechRecognizer
 import hnau.echospeak.model.utils.VariantsKnowFactorsProvider
+import hnau.echospeak.model.utils.compare.CompareRecognizer
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -50,7 +51,7 @@ class PrepareModel(
         }
 
         fun prepared(
-            recognizer: SpeechRecognizer,
+            recognizer: CompareRecognizer,
             speaker: Speaker,
         ): Prepared
     }
@@ -72,10 +73,15 @@ class PrepareModel(
                     )
             }
 
-            val recognizerDeferred: Deferred<SpeechRecognizer?> = async {
-                dependencies
+            val recognizerDeferred: Deferred<CompareRecognizer?> = async {
+                val recognizer = dependencies
                     .recognizerFactory
                     .create(dependencies.config.locale)
+                    ?: return@async null
+                CompareRecognizer(
+                    recognizer = recognizer,
+                    minSimilarityToEarlyStop = dependencies.config.minAllowedRecognitionSimilarity,
+                )
             }
 
             val speaker = speakerDeferred.await() ?: return@coroutineScope null
