@@ -1,20 +1,16 @@
 package hnau.echospeak.model.utils
 
-import hnau.echospeak.model.process.dto.Gender
-import hnau.echospeak.model.process.dto.GenderValues
 import java.util.Locale
 
 fun interface Speaker {
 
     suspend fun speak(
-        gender: Gender,
         text: String,
     ): Boolean
 
     data class Config(
         val speechRate: Float,
         val tryUseNetworkVoice: Boolean,
-        val pitchFactors: GenderValues<Float>,
     ) {
 
         companion object {
@@ -22,10 +18,6 @@ fun interface Speaker {
             val default: Config = Config(
                 speechRate = 0.85f,
                 tryUseNetworkVoice = true,
-                pitchFactors = GenderValues(
-                    male = 0.85f,
-                    female = 1.15f,
-                ),
             )
         }
     }

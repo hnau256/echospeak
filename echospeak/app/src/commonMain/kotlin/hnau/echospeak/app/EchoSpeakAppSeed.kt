@@ -1,8 +1,8 @@
 package hnau.echospeak.app
 
 import hnau.common.app.model.app.AppSeed
-import hnau.common.app.model.utils.Hue
 import hnau.common.app.model.theme.ThemeBrightness
+import hnau.common.app.model.utils.Hue
 import hnau.echospeak.model.RootModel
 
 fun createEchoSpeakAppSeed(

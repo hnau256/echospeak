@@ -12,8 +12,6 @@ import hnau.echospeak.model.utils.Speaker
 import hnau.echospeak.model.utils.SpeechRecognizer
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import kotlinx.serialization.Serializable
 
 class ProcessThemesModel(

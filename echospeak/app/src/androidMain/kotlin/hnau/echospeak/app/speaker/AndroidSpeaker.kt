@@ -4,10 +4,6 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
-import arrow.core.NonEmptySet
-import arrow.core.nonEmptySetOf
-import hnau.echospeak.model.process.dto.Gender
-import hnau.echospeak.model.process.dto.GenderValues
 import hnau.echospeak.model.utils.Speaker
 import hnau.echospeak.model.utils.Speaker.Config
 import kotlinx.coroutines.Job
@@ -22,7 +18,6 @@ import kotlin.coroutines.suspendCoroutine
 
 class AndroidSpeaker private constructor(
     private val textToSpeech: TextToSpeech,
-    private val pitchFactors: GenderValues<Float>,
 ) : Speaker {
 
     private val accessCurrentSpeechJobMutex = Mutex()
@@ -34,13 +29,11 @@ class AndroidSpeaker private constructor(
         }
 
     override suspend fun speak(
-        gender: Gender,
         text: String,
     ): Boolean = coroutineScope {
         val deferredResult = accessCurrentSpeechJobMutex.withLock {
             async {
-                textToSpeech.setPitch(pitchFactors[gender])
-                speak(
+                speakInternal(
                     text = text,
                 )
             }.also { currentSpeechJob = it }
@@ -48,7 +41,7 @@ class AndroidSpeaker private constructor(
         deferredResult.await()
     }
 
-    private suspend fun speak(
+    private suspend fun speakInternal(
         text: String,
     ): Boolean = suspendCancellableCoroutine { continuation ->
         textToSpeech.setOnUtteranceProgressListener(
@@ -92,16 +85,8 @@ class AndroidSpeaker private constructor(
             ) ?: return null
             textToSpeech.voice = voice
 
-            val voiceGender = voice.gender
             return AndroidSpeaker(
                 textToSpeech = textToSpeech,
-                pitchFactors = GenderValues.create { gender ->
-                    calcPitchForGender(
-                        voiceGender = voiceGender,
-                        targetGender = gender,
-                        pitchFactors = config.pitchFactors,
-                    )
-                }
             )
         }
 
@@ -142,37 +127,6 @@ class AndroidSpeaker private constructor(
                         .thenBy(Voice::getLatency)
                 )
                 .firstOrNull()
-
-            private val Voice.gender: Gender?
-                get() = Gender
-                    .entries
-                    .firstOrNull { gender ->
-                        genderVoiceNameElements[gender].any { element ->
-                            name.contains(
-                                other = element,
-                                ignoreCase = true,
-                            )
-                        }
-                    }
-
-            private fun calcPitchForGender(
-                voiceGender: Gender?,
-                targetGender: Gender,
-                pitchFactors: GenderValues<Float>,
-            ): Float {
-                if (voiceGender == targetGender) {
-                    return 1f
-                }
-                if (voiceGender == null) {
-                    return pitchFactors[targetGender]
-                }
-                return pitchFactors[targetGender] / pitchFactors[voiceGender]
-            }
-
-            private val genderVoiceNameElements: GenderValues<NonEmptySet<String>> = GenderValues(
-                male = nonEmptySetOf("male", "m1", "m_"),
-                female = nonEmptySetOf("female", "f1", "f_"),
-            )
         }
     }
 }
