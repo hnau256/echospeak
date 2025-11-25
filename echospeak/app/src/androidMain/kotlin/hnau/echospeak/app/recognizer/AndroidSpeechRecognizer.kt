@@ -7,16 +7,15 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import arrow.core.nonEmptySetOf
-import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
 import hnau.echospeak.app.permissions.PermissionRequester
 import hnau.echospeak.model.utils.SpeechRecognizer
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flowOn
 import java.util.Locale
 import android.speech.SpeechRecognizer as SystemSpeechRecognizer
 
@@ -25,100 +24,81 @@ class AndroidSpeechRecognizer(
     private val intent: Intent,
 ) : SpeechRecognizer {
 
-    @OptIn(ExperimentalForInheritanceCoroutinesApi::class)
-    class Launch(
-        applicationContext: Context,
-        intent: Intent,
-        private val state: MutableStateFlow<SpeechRecognizer.State> = SpeechRecognizer.State(
-            recognizedText = "",
-            stage = SpeechRecognizer.State.Stage.InProgress,
-        ).toMutableStateFlowAsInitial()
-    ) : StateFlow<SpeechRecognizer.State> by state {
+    @Synchronized
+    override fun recognize(): Flow<SpeechRecognizer.State> = callbackFlow {
 
-        private val recognizer: SystemSpeechRecognizer = SystemSpeechRecognizer
-            .createSpeechRecognizer(applicationContext)
-            .apply {
-                setRecognitionListener(
-                    object : RecognitionListener {
+        val listener = object : RecognitionListener {
 
-                        override fun onPartialResults(
-                            partialResults: Bundle,
-                        ) {
-                            val currentText = partialResults
-                                .getStringArrayList(SystemSpeechRecognizer.RESULTS_RECOGNITION)
-                                ?.firstOrNull()
-                                .orEmpty()
-                            state.value = SpeechRecognizer.State(
-                                recognizedText = currentText,
-                                stage = SpeechRecognizer.State.Stage.InProgress,
-                            )
-                        }
-
-                        override fun onResults(
-                            results: Bundle,
-                        ) {
-                            val resultText = results
-                                .getStringArrayList(SystemSpeechRecognizer.RESULTS_RECOGNITION)
-                                ?.firstOrNull()
-                                .orEmpty()
-                            state.value = SpeechRecognizer.State(
-                                recognizedText = resultText,
-                                stage = SpeechRecognizer.State.Stage.Finished,
-                            )
-                        }
-
-                        override fun onBeginningOfSpeech() {}
-
-                        override fun onBufferReceived(buffer: ByteArray?) {}
-
-                        override fun onEndOfSpeech() {}
-
-                        override fun onError(error: Int) {
-                            //TODO()
-
-                            state.value = SpeechRecognizer.State(
-                                recognizedText = "<Error>",
-                                stage = SpeechRecognizer.State.Stage.Finished,
-                            )
-                        }
-
-                        override fun onEvent(eventType: Int, params: Bundle?) {}
-
-                        override fun onReadyForSpeech(params: Bundle?) {}
-
-                        override fun onRmsChanged(rmsdB: Float) {}
-
-                    }
+            override fun onPartialResults(
+                partialResults: Bundle,
+            ) {
+                val currentText = partialResults
+                    .getStringArrayList(SystemSpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.firstOrNull()
+                    .orEmpty()
+                trySend(
+                    SpeechRecognizer.State(
+                        recognizedText = currentText,
+                        stage = SpeechRecognizer.State.Stage.InProgress,
+                    )
                 )
-                startListening(intent)
             }
 
-        fun cancel() {
+            override fun onResults(
+                results: Bundle,
+            ) {
+                val resultText = results
+                    .getStringArrayList(SystemSpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.firstOrNull()
+                    .orEmpty()
+                trySend(
+                    SpeechRecognizer.State(
+                        recognizedText = resultText,
+                        stage = SpeechRecognizer.State.Stage.Finished,
+                    )
+                )
+            }
 
-            state.value = SpeechRecognizer.State(
-                recognizedText = "",
-                stage = SpeechRecognizer.State.Stage.Finished,
-            )
+            override fun onBeginningOfSpeech() {}
+
+            override fun onBufferReceived(buffer: ByteArray?) {}
+
+            override fun onEndOfSpeech() {}
+
+            override fun onError(error: Int) {
+                //TODO()
+                trySend(
+                    SpeechRecognizer.State(
+                        recognizedText = "<Error>",
+                        stage = SpeechRecognizer.State.Stage.Finished,
+                    )
+                )
+            }
+
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+
+            override fun onReadyForSpeech(params: Bundle?) {}
+
+            override fun onRmsChanged(rmsdB: Float) {}
+
+        }
+
+        val recognizer = SystemSpeechRecognizer
+            .createSpeechRecognizer(applicationContext)
+
+        recognizer.setRecognitionListener(listener)
+        recognizer.startListening(intent)
+
+        awaitClose {
+            recognizer.setRecognitionListener(null)
             recognizer.cancel()
         }
     }
-
-    private var lastLaunch: Launch? = null
-        set(value) {
-            field?.cancel()
-            field = value
-        }
-
-    private val recognizeMutex = Mutex()
-
-    override suspend fun recognize(): StateFlow<SpeechRecognizer.State> = recognizeMutex.withLock {
-        withContext(Dispatchers.Main) {
-            Launch(
-                intent = intent,
-                applicationContext = applicationContext,
-            ).also(::lastLaunch::set)
-        }
-    }
+        .flowOn(Dispatchers.Main)
+        .buffer(
+            capacity = 1,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
 
     class Factory(
         private val applicationContext: Context,

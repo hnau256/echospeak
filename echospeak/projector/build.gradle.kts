@@ -24,6 +24,7 @@ kotlin {
                 implementation(libs.hnau.projector)
                 implementation(libs.hnau.model)
                 implementation(libs.hnau.dynamiccolor)
+                implementation(project(":echospeak:engine"))
                 implementation(project(":echospeak:model"))
                 implementation(compose.components.resources)
                 implementation(libs.kotlin.datetime)

@@ -33,8 +33,6 @@ class ProcessThemesProjector(
     interface Dependencies {
 
         val backButtonWidth: BackButtonWidth
-
-        fun phrase(): PhraseProjector.Dependencies
     }
 
     private val phrase: StateFlow<Loadable<KeyValue<PhraseVariant, PhraseProjector>>> = model
@@ -45,7 +43,6 @@ class ProcessThemesProjector(
                     PhraseProjector(
                         scope = scope,
                         model = phrase,
-                        dependencies = dependencies.phrase(),
                     )
                 }
 

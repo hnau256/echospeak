@@ -1,5 +1,7 @@
 package hnau.echospeak.model.utils
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.Locale
 
@@ -13,7 +15,7 @@ interface SpeechRecognizer {
         enum class Stage { InProgress, Finished }
     }
 
-    suspend fun recognize(): StateFlow<State>
+    fun recognize(): Flow<State>
 
     interface Factory {
 

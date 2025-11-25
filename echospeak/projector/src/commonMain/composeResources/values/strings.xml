@@ -2,4 +2,11 @@
     <string name="app_name">EchoSpeak</string>
     <string name="repeat_after">Repeat after</string>
     <string name="themes">Темы</string>
+    <string name="remember">Помню</string>
+    <string name="know">Знаю</string>
+    <string name="phrase">Фраза</string>
+    <string name="translation">Перевод</string>
+    <string name="comment">Комментарий</string>
+    <string name="say">Сказать</string>
+    <string name="next">Далее</string>
 </resources>

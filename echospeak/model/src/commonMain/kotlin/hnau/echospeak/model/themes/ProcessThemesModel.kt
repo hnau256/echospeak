@@ -24,6 +24,7 @@ import hnau.echospeak.engine.chooseVariant
 import hnau.echospeak.model.themes.dto.Phrase
 import hnau.echospeak.model.themes.dto.PhraseVariant
 import hnau.echospeak.model.themes.dto.ThemeId
+import hnau.echospeak.model.themes.phrase.PhraseModel
 import hnau.echospeak.model.utils.EchoSpeakConfig
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
@@ -73,7 +74,7 @@ class ProcessThemesModel(
                         }
                 }
                 .sortedBy { variant ->
-                    variant.phrase.phrase.hashCode()
+                    variant.phrase.phrase.length
                 }
                 .toNonEmptyListOrThrow()
         }

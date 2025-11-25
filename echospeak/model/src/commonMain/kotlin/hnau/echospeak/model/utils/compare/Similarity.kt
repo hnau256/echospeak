@@ -19,5 +19,9 @@ value class Similarity(
         val full = Similarity(
             factor = 1f,
         )
+
+        val zero = Similarity(
+            factor = 0f,
+        )
     }
 }

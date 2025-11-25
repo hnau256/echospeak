@@ -13,8 +13,8 @@ class TextComparator(
     fun compare(
         to: String,
     ): Similarity {
-        val base = base ?: return Similarity.full
-        val toNormalized = to.normalizeToNonEmpty() ?: return Similarity.full
+        val base = base ?: return Similarity.zero
+        val toNormalized = to.normalizeToNonEmpty() ?: return Similarity.zero
 
         val maxLength = max(toNormalized.length, base.length)
 

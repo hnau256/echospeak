@@ -1,5 +1,6 @@
 @file:UseSerializers(
     NonEmptyListSerializer::class,
+    MutableStateFlowSerializer::class,
 )
 
 package hnau.echospeak.model.themes
@@ -22,6 +23,7 @@ import hnau.common.kotlin.groupByToNonEmpty
 import hnau.common.kotlin.ifNull
 import hnau.common.kotlin.ifTrue
 import hnau.common.kotlin.mapSecond
+import hnau.common.kotlin.serialization.MutableStateFlowSerializer
 import hnau.common.kotlin.toAccessor
 import hnau.echospeak.model.themes.dto.Phrase
 import hnau.echospeak.model.themes.dto.ThemeId
