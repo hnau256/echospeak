@@ -1,8 +1,11 @@
 package hnau.echospeak.app.themes
 
 import android.content.Context
+import android.content.res.AssetManager
 import arrow.core.NonEmptyList
 import arrow.core.serialization.NonEmptyListSerializer
+import hnau.common.kotlin.ifNull
+import hnau.common.kotlin.removeSuffixOrNull
 import hnau.echospeak.R
 import hnau.echospeak.model.themes.dto.Phrase
 import hnau.echospeak.model.themes.dto.ThemeId
@@ -19,19 +22,37 @@ class AndroidThemesProvider(
 
     override suspend fun loadThemes(): Map<ThemeId, NonEmptyList<Phrase>> =
         withContext(Dispatchers.IO) {
-            context
-                .resources
-                .openRawResource(R.raw.phrases)
-                .let { jsonStream -> Json.decodeFromStream(serializer, jsonStream) }
+
+            val assetsManager = context.assets
+
+            assetsManager
+                .list(dir)
+                .orEmpty()
+                .associate { fileName ->
+
+                    val filePath = dir + fileName
+
+                    val themeId = fileName
+                        .removeSuffixOrNull(fileNameSuffix)
+                        .ifNull { error("Asset '$filePath' has no suffix '$fileNameSuffix'") }
+                        .let(::ThemeId)
+
+                    val phrases = assetsManager
+                        .open(filePath)
+                        .use { inputStream -> Json.decodeFromStream(serializer, inputStream) }
+
+                    themeId to phrases
+                }
         }
 
     companion object {
 
-        private val serializer = MapSerializer(
-            keySerializer = ThemeId.serializer(),
-            valueSerializer = NonEmptyListSerializer(
-                Phrase.serializer(),
-            )
+        private const val fileNameSuffix = ".json"
+
+        private const val dir = "themes/"
+
+        private val serializer = NonEmptyListSerializer(
+            Phrase.serializer(),
         )
     }
 }
