@@ -32,7 +32,6 @@ import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 
@@ -53,8 +52,9 @@ class ChooseOrProcessThemesModel(
 
     @Serializable
     data class Skeleton(
-        val unselectedThemes: MutableStateFlow<Set<ThemeId>> =
-            emptySet<ThemeId>().toMutableStateFlowAsInitial(),
+
+        val overwrittenUnselectedThemes: MutableStateFlow<Set<ThemeId>?> =
+            MutableStateFlow(null),
 
         val launched: MutableStateFlow<Boolean> =
             false.toMutableStateFlowAsInitial(),
@@ -73,10 +73,16 @@ class ChooseOrProcessThemesModel(
         ) : State
     }
 
+    private val unselectedThemes = UnselectedThemesDelegate(
+        scope = scope,
+        settings = dependencies.settings,
+        overwritten = skeleton.overwrittenUnselectedThemes,
+    )
+
     val state: StateFlow<ChooseOrProcessStateModel> = combineState(
         scope = scope,
         a = skeleton.launched,
-        b = skeleton.unselectedThemes,
+        b = unselectedThemes.unselectedThemes,
     ) { launched, unselectedThemes ->
         themes
             .toList()
@@ -128,6 +134,7 @@ class ChooseOrProcessThemesModel(
                     scope = scope,
                     initial = state,
                     skeleton = skeleton,
+                    unselectedThemes = unselectedThemes,
                 )
             }
         }
@@ -136,6 +143,7 @@ class ChooseOrProcessThemesModel(
         private val scope: CoroutineScope,
         initial: State.NotLaunched,
         private val skeleton: Skeleton,
+        private val unselectedThemes: UnselectedThemesDelegate,
     ) : Stickable<State, ChooseOrProcessStateModel.Choose> {
 
         private val themes: List<Pair<ThemeId, MutableStateFlow<Boolean>>> = initial
@@ -172,12 +180,13 @@ class ChooseOrProcessThemesModel(
         override val result: ChooseOrProcessStateModel.Choose
             get() = ChooseOrProcessStateModel.Choose(
                 ChooseThemesModel(
+                    scope = scope,
                     themes = themes.map { (id, selected) ->
                         ChooseThemesModel.Theme(
                             id = id,
                             isSelected = selected,
                             switchIsSelected = {
-                                skeleton.unselectedThemes.update { unselectedThemes ->
+                                unselectedThemes.update { unselectedThemes ->
                                     (id !in unselectedThemes).foldBoolean(
                                         ifTrue = { unselectedThemes + id },
                                         ifFalse = { unselectedThemes - id },
@@ -186,16 +195,20 @@ class ChooseOrProcessThemesModel(
                             },
                         )
                     },
-                    launch = selectedThemes
-                        .mapState(scope) { selectedThemes ->
-                            val atLeastOneIsSelected = selectedThemes.isNotEmpty()
-                            atLeastOneIsSelected.ifTrue { { skeleton.launched.value = true } }
-                        },
+                    launch = selectedThemes.mapState(scope) { selectedThemes ->
+                        val atLeastOneIsSelected = selectedThemes.isNotEmpty()
+                        atLeastOneIsSelected.ifTrue {
+                            {
+                                unselectedThemes.apply()
+                                skeleton.launched.value = true
+                            }
+                        }
+                    },
                     selectAll = selectedThemes.mapState(scope) { selectedThemes ->
                         when (selectedThemes) {
                             allIds -> null
                             else -> {
-                                { skeleton.unselectedThemes.value = emptySet() }
+                                { unselectedThemes.update { emptySet() } }
                             }
                         }
                     },
@@ -203,7 +216,7 @@ class ChooseOrProcessThemesModel(
                         when (selectedThemes.size) {
                             0 -> null
                             else -> {
-                                { skeleton.unselectedThemes.value = allIds }
+                                { unselectedThemes.update { allIds } }
                             }
                         }
                     },

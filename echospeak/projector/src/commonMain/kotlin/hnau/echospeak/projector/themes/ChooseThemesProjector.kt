@@ -12,11 +12,13 @@ import androidx.compose.material.icons.filled.Deselect
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import hnau.common.app.projector.uikit.FullScreen
@@ -30,6 +32,7 @@ import hnau.common.app.projector.utils.Icon
 import hnau.common.app.projector.utils.Overcompose
 import hnau.common.app.projector.utils.horizontalDisplayPadding
 import hnau.common.app.projector.utils.verticalDisplayPadding
+import hnau.common.kotlin.foldNullable
 import hnau.echospeak.model.themes.ChooseThemesModel
 import hnau.echospeak.projector.resources.Res
 import hnau.echospeak.projector.resources.themes
@@ -90,11 +93,15 @@ class ChooseThemesProjector(
                                     bottom = Dimens.verticalDisplayPadding,
                                 ),
                                 transitionSpec = TransitionSpec.vertical(),
-                            ) { launch ->
+                            ) { launchOrLaunching ->
+                                val launchOrNull by launchOrLaunching.collectAsState()
                                 FloatingActionButton(
-                                    onClick = launch,
+                                    onClick = { launchOrNull?.invoke() },
                                 ) {
-                                    Icon(Icons.Default.PlayCircle)
+                                    launchOrNull.foldNullable(
+                                        ifNull = { CircularProgressIndicator() },
+                                        ifNotNull = { Icon(Icons.Default.PlayCircle) },
+                                    )
                                 }
                             }
                     }
