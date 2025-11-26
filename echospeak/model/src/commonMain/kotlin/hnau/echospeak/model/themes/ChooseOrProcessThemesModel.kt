@@ -27,6 +27,7 @@ import hnau.common.kotlin.serialization.MutableStateFlowSerializer
 import hnau.common.kotlin.toAccessor
 import hnau.echospeak.model.themes.dto.Phrase
 import hnau.echospeak.model.themes.dto.ThemeId
+import hnau.echospeak.model.utils.settings.Settings
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +45,8 @@ class ChooseOrProcessThemesModel(
 
     @Pipe
     interface Dependencies {
+
+        val settings: Settings
 
         fun process(): ProcessThemesModel.Dependencies
     }

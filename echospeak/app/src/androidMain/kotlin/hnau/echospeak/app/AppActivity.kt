@@ -10,10 +10,13 @@ import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import hnau.common.app.model.app.AppViewModel
 import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
+import hnau.common.kotlin.lazy.AsyncLazy
+import hnau.echospeak.app.db.AppDatabase
 import hnau.echospeak.app.knowfactors.VariantsKnowFactorsRepositoryFactoryRoomImpl
 import hnau.echospeak.app.permissions.ActivityPermissionRequester
 import hnau.echospeak.app.permissions.WaitingPermissionRequester
 import hnau.echospeak.app.recognizer.AndroidSpeechRecognizer
+import hnau.echospeak.app.settings.AndroidDatabaseSettings
 import hnau.echospeak.app.speaker.AndroidSpeaker
 import hnau.echospeak.app.themes.AndroidThemesProvider
 import hnau.echospeak.model.RootModel
@@ -33,12 +36,17 @@ class AppActivity : ComponentActivity() {
     @Suppress("DEPRECATION")
     private val viewModel: AppViewModel<RootModel, RootModel.Skeleton> by viewModels {
         val context = applicationContext
+
+        val appDatabaseAsyncLazy = AsyncLazy {
+            AppDatabase.create(context)
+        }
+
         AppViewModel.factory(
             context = context,
             seed = createEchoSpeakAppSeed(
                 rootModelDependencies = RootModel.Dependencies.impl(
                     variantsKnowFactorsProviderFactory = VariantsKnowFactorsRepositoryFactoryRoomImpl(
-                        context = context,
+                        getAppDatabase = { appDatabaseAsyncLazy.get() },
                     ),
                     //dialogsProvider = ResourcesDialogsProvider(context),
                     speakerFactory = AndroidSpeaker.Factory(context),
@@ -55,6 +63,9 @@ class AppActivity : ComponentActivity() {
                     /*translatorFactory = AndroidTranslator.Factory(),*/
                     themesProvider = AndroidThemesProvider(
                         context = context,
+                    ),
+                    settingsFactory = AndroidDatabaseSettings.Factory(
+                        getAppDatabase = { appDatabaseAsyncLazy.get() },
                     ),
                 )
             ),

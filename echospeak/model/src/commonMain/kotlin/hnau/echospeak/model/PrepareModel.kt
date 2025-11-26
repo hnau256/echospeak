@@ -16,6 +16,7 @@ import hnau.echospeak.model.utils.ExerciseId
 import hnau.echospeak.model.utils.Speaker
 import hnau.echospeak.model.utils.SpeechRecognizer
 import hnau.echospeak.model.utils.VariantsKnowFactorsProvider
+import hnau.echospeak.model.utils.settings.Settings
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -41,6 +42,8 @@ class PrepareModel(
 
         val variantsKnowFactorsProviderFactory: VariantsKnowFactorsProvider.Factory
 
+        val settingsFactory: Settings.Factory
+
         @Pipe
         interface Prepared {
 
@@ -52,6 +55,7 @@ class PrepareModel(
         fun prepared(
             recognizer: SpeechRecognizer,
             speaker: Speaker,
+            settings: Settings,
         ): Prepared
     }
 
@@ -78,12 +82,20 @@ class PrepareModel(
                     .create(dependencies.config.locale)
             }
 
+            val settingsDeferred: Deferred<Settings> = async {
+                dependencies
+                    .settingsFactory
+                    .createSettings()
+            }
+
             val speaker = speakerDeferred.await() ?: return@coroutineScope null
             val recognizer = recognizerDeferred.await() ?: return@coroutineScope null
+            val settings = settingsDeferred.await()
 
             dependencies.prepared(
                 speaker = speaker,
                 recognizer = recognizer,
+                settings = settings,
             )
         }
     }.mapWithScope(scope) { scope, preparedOrLoadingOrNull ->

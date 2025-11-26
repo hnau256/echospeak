@@ -7,19 +7,24 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactors
 import hnau.echospeak.app.db.knowfactors.ExercisesVariantsKnowFactorsDao
+import hnau.echospeak.app.settings.AppSetting
+import hnau.echospeak.app.settings.AppSettingDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Database(
     entities = [
         ExercisesVariantsKnowFactors::class,
+        AppSetting::class,
     ],
     version = 1,
 )
 @TypeConverters(EchoSpeakDatabaseTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun exercisesVariantsKnowFactorsDao(): ExercisesVariantsKnowFactorsDao
+    abstract val exercisesVariantsKnowFactorsDao: ExercisesVariantsKnowFactorsDao
+
+    abstract val appSettingDao: AppSettingDao
 
     companion object {
 
