@@ -42,6 +42,7 @@ import hnau.echospeak.projector.resources.phrase
 import hnau.echospeak.projector.resources.say
 import hnau.echospeak.projector.resources.translation
 import hnau.echospeak.projector.themes.phrase.RecognizeProjector
+import hnau.echospeak.projector.themes.phrase.display.PhraseDisplayProjector
 import hnau.echospeak.projector.utils.Content
 import hnau.echospeak.projector.utils.KnowFactor
 import hnau.echospeak.projector.utils.RememberFactor
@@ -114,35 +115,17 @@ class PhraseProjector(
                 ),
             ) {
                 KnowFactor(
-                    factorOrUnknown = model.phrase.learnInfo?.info?.knowFactor,
+                    factorOrUnknown = model.learnInfo?.info?.knowFactor,
                 )
                 RememberFactor(
-                    factorOrUnknown = model.phrase.learnInfo?.rememberFactor,
+                    factorOrUnknown = model.learnInfo?.rememberFactor,
                 )
             }
 
             Spacer(Modifier.height(Dimens.separation))
 
-            TextWithTitle(
-                title = stringResource(Res.string.phrase),
-                text = model.phrase.variant.phrase.phrase,
-                color = MaterialTheme.colorScheme.primary,
-            )
-
-            Spacer(Modifier.height(Dimens.separation))
-
-            TextWithTitle(
-                title = stringResource(Res.string.translation),
-                text = model.phrase.variant.phrase.translation,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            Spacer(Modifier.height(Dimens.separation))
-
-            TextWithTitle(
-                title = stringResource(Res.string.comment),
-                text = model.phrase.variant.phrase.comment,
-                color = MaterialTheme.colorScheme.onSurface,
+            PhraseDisplayProjector(
+                model = model.display,
             )
 
             Spacer(Modifier.weight(1f))
@@ -228,32 +211,6 @@ class PhraseProjector(
             },
         ) {
             content()
-        }
-    }
-
-    @Composable
-    private fun TextWithTitle(
-        title: String,
-        text: String,
-        color: Color,
-    ) {
-        Column(
-            modifier = Modifier
-                .horizontalDisplayPadding()
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Dimens.extraSmallSeparation),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = color,
-                maxLines = 1,
-            )
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = color,
-            )
         }
     }
 }

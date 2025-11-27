@@ -1,21 +1,28 @@
 package hnau.echospeak.projector.themes
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import hnau.common.app.projector.uikit.FullScreen
 import hnau.common.app.projector.uikit.TopBar
+import hnau.common.app.projector.uikit.TopBarAction
 import hnau.common.app.projector.uikit.state.LoadableContent
 import hnau.common.app.projector.uikit.state.StateContent
 import hnau.common.app.projector.uikit.state.TransitionSpec
+import hnau.common.app.projector.utils.Icon
 import hnau.common.app.projector.utils.SlideOrientation
 import hnau.common.app.projector.utils.getTransitionSpecForSlide
 import hnau.common.kotlin.KeyValue
 import hnau.common.kotlin.Loadable
 import hnau.common.kotlin.coroutines.mapWithScope
 import hnau.common.kotlin.map
+import hnau.echospeak.model.themes.DisplayMode
 import hnau.echospeak.model.themes.ProcessThemesModel
 import hnau.echospeak.model.themes.dto.PhraseVariant
 import hnau.echospeak.projector.utils.BackButtonWidth
@@ -25,7 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class ProcessThemesProjector(
     scope: CoroutineScope,
-    model: ProcessThemesModel,
+    private val model: ProcessThemesModel,
     private val dependencies: Dependencies,
 ) {
 
@@ -57,6 +64,17 @@ class ProcessThemesProjector(
                 TopBar(
                     modifier = Modifier.padding(contentPadding),
                 ) {
+                    Spacer(Modifier.weight(1f))
+                    TopBarAction(
+                        onClick = model::switchDisplayMode,
+                    ) {
+                        Icon(
+                            when (model.displayMode.collectAsState().value) {
+                                DisplayMode.Text -> Icons.Default.TextFields
+                                DisplayMode.Speech -> Icons.Default.Headphones
+                            }
+                        )
+                    }
                 }
             },
         ) { contentPadding ->

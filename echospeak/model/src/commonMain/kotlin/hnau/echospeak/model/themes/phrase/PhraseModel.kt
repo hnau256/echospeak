@@ -11,9 +11,9 @@ import hnau.common.kotlin.ifTrue
 import hnau.common.kotlin.serialization.MutableStateFlowSerializer
 import hnau.echospeak.engine.ChosenVariant
 import hnau.echospeak.engine.KnowFactor
-import hnau.echospeak.model.themes.dto.PhraseVariant
+import hnau.echospeak.model.themes.dto.Phrase
+import hnau.echospeak.model.themes.phrase.display.PhraseDisplayModel
 import hnau.echospeak.model.utils.EchoSpeakConfig
-import hnau.echospeak.model.utils.Speaker
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,26 +23,39 @@ import kotlinx.serialization.UseSerializers
 
 class PhraseModel(
     scope: CoroutineScope,
-    dependencies: Dependencies,
+    private val dependencies: Dependencies,
     private val skeleton: Skeleton,
-    val phrase: ChosenVariant<PhraseVariant>,
     private val complete: suspend (newFactor: KnowFactor) -> Unit,
 ) {
 
     @Pipe
     interface Dependencies {
 
+        val learnInfo: ChosenVariant.LearnInfo?
+
+        val phrase: Phrase
+
         val config: EchoSpeakConfig
 
-        val speaker: Speaker
-
         fun recognize(): RecognizeModel.Dependencies
+
+        fun display(): PhraseDisplayModel.Dependencies
     }
 
     @Serializable
     data class Skeleton(
         val state: MutableStateFlow<PhraseStateModel.Skeleton> =
             PhraseStateModel.Skeleton.WaitingForRecognizing.toMutableStateFlowAsInitial(),
+        val display: PhraseDisplayModel.Skeleton = PhraseDisplayModel.Skeleton(),
+    )
+
+    val learnInfo: ChosenVariant.LearnInfo?
+        get() = dependencies.learnInfo
+
+    val display = PhraseDisplayModel(
+        scope = scope,
+        dependencies = dependencies.display(),
+        skeleton = skeleton.display,
     )
 
     private fun updateState(
@@ -63,7 +76,7 @@ class PhraseModel(
                     model = RecognizeModel(
                         scope = scope,
                         dependencies = dependencies.recognize(),
-                        textToRecognize = phrase.variant.phrase.phrase,
+                        textToRecognize = dependencies.phrase.phrase,
                         onReady = { result ->
                             updateState(
                                 PhraseStateModel.Skeleton.Recognized(
@@ -81,8 +94,7 @@ class PhraseModel(
                     complete = (state.result.similarity.satisfactory).ifTrue {
                         actionOrNullIfExecuting(scope) {
                             complete(
-                                phrase
-                                    .learnInfo
+                                learnInfo
                                     ?.info
                                     ?.knowFactor
                                     ?.times(dependencies.config.correctAnswerKnowFactorFactor)

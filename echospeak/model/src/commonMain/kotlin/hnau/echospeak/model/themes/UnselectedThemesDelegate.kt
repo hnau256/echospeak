@@ -22,7 +22,7 @@ class UnselectedThemesDelegate(
     internal val overwritten: MutableStateFlow<Set<ThemeId>?>,
 ) {
 
-    private val setting: Setting<Set<ThemeId>> = settings["unselected_dictionaries"].map(
+    private val setting: Setting<Set<ThemeId>> = settings["unselected_themes"].map(
         Mapper.stringSplit('|') +
                 Mapper(::ThemeId, ThemeId::id).toListMapper() +
                 Mapper(List<ThemeId>::toSet, Set<ThemeId>::toList),

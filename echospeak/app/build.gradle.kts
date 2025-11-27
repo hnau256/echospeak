@@ -91,7 +91,6 @@ kotlin {
                 implementation(libs.kotlin.serialization.json)
                 implementation(libs.kotlin.coroutines.android)
                 implementation(libs.kotlin.playServices)
-                implementation(libs.google.translate)
             }
         }
     }

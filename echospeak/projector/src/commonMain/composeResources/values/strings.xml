@@ -9,4 +9,7 @@
     <string name="comment">Комментарий</string>
     <string name="say">Сказать</string>
     <string name="next">Далее</string>
+    <string name="listen">Послушать</string>
+    <string name="read">Прочитать</string>
+    <string name="laucnch">Запустить</string>
 </resources>

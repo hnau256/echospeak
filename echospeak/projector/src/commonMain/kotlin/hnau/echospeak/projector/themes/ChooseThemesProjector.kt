@@ -2,6 +2,7 @@ package hnau.echospeak.projector.themes
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
@@ -21,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import hnau.common.app.projector.uikit.ActionOrNull
 import hnau.common.app.projector.uikit.FullScreen
 import hnau.common.app.projector.uikit.TopBar
 import hnau.common.app.projector.uikit.TopBarAction
@@ -35,6 +38,7 @@ import hnau.common.app.projector.utils.verticalDisplayPadding
 import hnau.common.kotlin.foldNullable
 import hnau.echospeak.model.themes.ChooseThemesModel
 import hnau.echospeak.projector.resources.Res
+import hnau.echospeak.projector.resources.laucnch
 import hnau.echospeak.projector.resources.themes
 import hnau.echospeak.projector.utils.BackButtonWidth
 import hnau.pipe.annotations.Pipe
@@ -77,34 +81,40 @@ class ChooseThemesProjector(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = contentPadding,
                 bottom = { paddingValues ->
-                    Box(
-                        modifier = Modifier.padding(paddingValues),
-                        contentAlignment = Alignment.BottomEnd,
-                    ) {
-                        model
-                            .launch
-                            .collectAsState()
-                            .value
-                            .NullableStateContent(
-                                modifier = Modifier.padding(
-                                    top = Dimens.separation,
-                                    start = Dimens.separation,
-                                    end = Dimens.horizontalDisplayPadding,
-                                    bottom = Dimens.verticalDisplayPadding,
-                                ),
-                                transitionSpec = TransitionSpec.vertical(),
-                            ) { launchOrLaunching ->
-                                val launchOrNull by launchOrLaunching.collectAsState()
-                                FloatingActionButton(
-                                    onClick = { launchOrNull?.invoke() },
-                                ) {
-                                    launchOrNull.foldNullable(
-                                        ifNull = { CircularProgressIndicator() },
-                                        ifNotNull = { Icon(Icons.Default.PlayCircle) },
+                    model
+                        .launch
+                        .collectAsState()
+                        .value
+                        .NullableStateContent(
+                            modifier = Modifier.fillMaxWidth(),
+                            transitionSpec = TransitionSpec.vertical(),
+                            contentAlignment = Alignment.BottomCenter,
+                            nullContent = { Spacer(Modifier.fillMaxWidth()) }
+                        ) { launchOrLaunching ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(paddingValues)
+                                    .padding(
+                                        top = Dimens.separation,
+                                        start = Dimens.separation,
+                                        end = Dimens.horizontalDisplayPadding,
+                                        bottom = Dimens.verticalDisplayPadding,
+                                    ),
+                                contentAlignment = Alignment.BottomEnd,
+                            ) {
+                                ActionOrNull(
+                                    actionOrNull = launchOrLaunching.collectAsState().value,
+                                    icon = { Icon(Icons.Default.PlayCircle) },
+                                ) { iconOrProgress, onClick ->
+                                    ExtendedFloatingActionButton(
+                                        onClick = { onClick?.invoke() },
+                                        text = { Text(stringResource(Res.string.laucnch)) },
+                                        icon = { iconOrProgress() }
                                     )
                                 }
                             }
-                    }
+                        }
                 }
             ) { contentPadding ->
                 LazyColumn(

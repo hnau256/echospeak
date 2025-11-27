@@ -5,6 +5,7 @@
 package hnau.echospeak.model.themes
 
 import arrow.core.NonEmptyList
+import arrow.core.getOrElse
 import arrow.core.toNonEmptyListOrThrow
 import hnau.common.app.model.goback.GoBackHandler
 import hnau.common.app.model.goback.NeverGoBackHandler
@@ -12,6 +13,7 @@ import hnau.common.kotlin.KeyValue
 import hnau.common.kotlin.Loadable
 import hnau.common.kotlin.Loading
 import hnau.common.kotlin.Ready
+import hnau.common.kotlin.coroutines.mapStateLite
 import hnau.common.kotlin.coroutines.mapWithScope
 import hnau.common.kotlin.coroutines.toMutableStateFlowAsInitial
 import hnau.common.kotlin.foldNullable
@@ -26,6 +28,10 @@ import hnau.echospeak.model.themes.dto.PhraseVariant
 import hnau.echospeak.model.themes.dto.ThemeId
 import hnau.echospeak.model.themes.phrase.PhraseModel
 import hnau.echospeak.model.utils.EchoSpeakConfig
+import hnau.echospeak.model.utils.settings.Setting
+import hnau.echospeak.model.utils.settings.Settings
+import hnau.echospeak.model.utils.settings.map
+import hnau.echospeak.model.utils.settings.value
 import hnau.pipe.annotations.Pipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -39,7 +45,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 
 class ProcessThemesModel(
-    scope: CoroutineScope,
+    private val scope: CoroutineScope,
     private val dependencies: Dependencies,
     private val skeleton: Skeleton,
     themes: NonEmptyList<KeyValue<ThemeId, NonEmptyList<Phrase>>>,
@@ -52,7 +58,13 @@ class ProcessThemesModel(
 
         val storage: VariantsKnowFactorsStorage
 
-        fun variant(): PhraseModel.Dependencies
+        val settings: Settings
+
+        fun variant(
+            displayMode: StateFlow<DisplayMode>,
+            phrase: Phrase,
+            learnInfo: ChosenVariant.LearnInfo?,
+        ): PhraseModel.Dependencies
     }
 
     @Serializable
@@ -60,6 +72,22 @@ class ProcessThemesModel(
         val variant: MutableStateFlow<Loadable<KeyValue<ChosenVariant<PhraseVariant>, PhraseModel.Skeleton>>> =
             Loading.toMutableStateFlowAsInitial(),
     )
+
+    private val displayModeSetting: Setting<DisplayMode> = dependencies
+        .settings["display_mode"]
+        .map(DisplayMode.nameMapper)
+
+    val displayMode: StateFlow<DisplayMode> = displayModeSetting
+        .state
+        .mapStateLite { modeOrNone ->
+            modeOrNone.getOrElse { DisplayMode.default }
+        }
+
+    fun switchDisplayMode() {
+        scope.launch {
+            displayModeSetting.update(displayMode.value.next)
+        }
+    }
 
     private val variants: Deferred<NonEmptyList<PhraseVariant>> = scope.async {
         withContext(Dispatchers.Default) {
@@ -122,9 +150,12 @@ class ProcessThemesModel(
             variantOrLoading.map { (variant, variantSkeleton) ->
                 val model = PhraseModel(
                     scope = scope,
-                    dependencies = dependencies.variant(),
+                    dependencies = dependencies.variant(
+                        displayMode = displayMode,
+                        phrase = variant.variant.phrase,
+                        learnInfo = variant.learnInfo,
+                    ),
                     skeleton = variantSkeleton,
-                    phrase = variant,
                     complete = { newKnowFactor ->
                         dependencies.storage.update(
                             id = variant.variant.id,
