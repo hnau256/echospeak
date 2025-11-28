@@ -27,12 +27,13 @@ import kotlin.math.sign
 @Composable
 fun PhraseDisplayProjector(
     model: PhraseDisplayModel,
+    modifier: Modifier = Modifier,
 ) {
 
     Column(
         verticalArrangement = Arrangement.spacedBy(Dimens.separation),
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
 
         val state: KeyValue<DisplayMode, PhraseDisplayModel.State> by model

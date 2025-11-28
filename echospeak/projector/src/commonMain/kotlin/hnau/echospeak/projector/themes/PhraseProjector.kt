@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
@@ -106,27 +107,45 @@ class PhraseProjector(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            Row(
-                modifier = Modifier.horizontalDisplayPadding(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(
-                    space = Dimens.separation,
-                    alignment = Alignment.CenterHorizontally,
-                ),
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalDisplayPadding(),
             ) {
-                KnowFactor(
-                    factorOrUnknown = model.learnInfo?.info?.knowFactor,
-                )
-                RememberFactor(
-                    factorOrUnknown = model.learnInfo?.rememberFactor,
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Dimens.separation),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(
+                        space = Dimens.separation,
+                        alignment = Alignment.CenterHorizontally,
+                    ),
+                ) {
+                    KnowFactor(
+                        factorOrUnknown = model.learnInfo?.info?.knowFactor,
+                    )
+                    RememberFactor(
+                        factorOrUnknown = model.learnInfo?.rememberFactor,
+                    )
+                }
             }
 
             Spacer(Modifier.height(Dimens.separation))
 
-            PhraseDisplayProjector(
-                model = model.display,
-            )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalDisplayPadding(),
+            ) {
+                PhraseDisplayProjector(
+                    model = model.display,
+                    modifier = Modifier.padding(
+                        vertical = Dimens.separation,
+                    ),
+                )
+            }
 
             Spacer(Modifier.weight(1f))
 
